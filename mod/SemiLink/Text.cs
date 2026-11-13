@@ -1,8 +1,7 @@
 namespace SemiLink;
 
 /// <summary>
-/// Player-facing strings. English is the source language; translations will hook in here
-/// (see AGENTS.md, "Language").
+/// Player-facing strings. English is the source language; translations will hook in here.
 /// </summary>
 internal static class Text
 {

@@ -2,23 +2,15 @@
 
 **LAN and direct multiplayer for R.E.P.O., without Photon Cloud.**
 
-R.E.P.O. has no local mode: even two players on the same network play through Photon's servers. SemiLink
-brings it back, like "Open to LAN" in Minecraft. One player presses **Host** and the server runs inside
-their game; friends join by address, from a LAN list or through a Steam invite. It works over the same LAN,
-any VPN you already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6, or a router port SemiLink opens via
-UPnP. No Photon account, no admin rights, no `hosts` edits.
+R.E.P.O. has no local mode: even two players on the same network play through Photon's servers, and
+players far from Photon's data centers get high ping. SemiLink brings local play back, like "Open to LAN"
+in Minecraft. One player presses **Host** and a server runs inside their game; friends connect straight
+to the host over the same LAN, any VPN they already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6,
+or a forwarded port. No Photon account, no admin rights, no `hosts` edits.
 
 > [!WARNING]
 > **Pre-alpha.** Host and Join work in single-PC tests; a two-player test and the first release are next.
-> Build from source: [mod/README.md](mod/README.md). See the [roadmap](docs/roadmap.md).
-
-## Why
-
-All multiplayer traffic in R.E.P.O. goes through Photon Cloud. If you are far from Photon's data centers,
-every packet between you and a friend in the same city travels to another country and back. With SemiLink
-it goes straight to the host.
-
-Details and comparison with existing mods: [docs/why-semilink.md](docs/why-semilink.md).
+> There is no packaged release yet: build from source (below).
 
 ## How it works
 
@@ -29,37 +21,68 @@ flowchart LR
         S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + SemiLink] -- "host IP:port<br/>LAN, VPN, IPv6, forwarded port" --> S
+    GB[Friend<br/>R.E.P.O. + SemiLink] -- "host IP<br/>LAN, VPN, IPv6, forwarded port" --> S
 ```
 
-- **Client mod** (BepInEx): adds a *Cloud / Host / Join* switch. *Cloud* leaves the game untouched.
-- **Server:** [LuxonServer](https://github.com/niansa/LuxonServer), an open-source Photon-compatible
-  server, bundled with the mod and started by the Host button. An always-on standalone or Docker server is
-  an optional extra for groups who want one.
-- **Connection:** a plain IP address, so any network path works. A built-in connection helper for players
-  with no path at all is designed and will be built if real-world data shows the need.
+- The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
+- In **Host** mode it runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source
+  Photon-compatible server, inside your game session, and stops it when you leave.
+- Joining players can use any of the host's addresses; the mod keeps all connections, including voice
+  chat, on the address they used.
 
-More: [docs/architecture.md](docs/architecture.md), [docs/connectivity.md](docs/connectivity.md).
+## Usage
 
-## Planned features
+Every player installs the mod. In the game menu, the **SemiLink** bar is in the top-right corner; click it
+or press **F8**.
 
-- [x] Join by address (phase 1)
-- [x] One-click Host, LAN discovery, address hints (phase 2)
-- [ ] Steam invites, automatic port forwarding via UPnP, Thunderstore release (phase 3)
-- [ ] Decision on a built-in connection helper (phase 4)
-- [ ] Optional standalone and Docker server (phase 5)
+| Mode | What it does |
+|---|---|
+| **Cloud** | Normal online play through Photon Cloud. The default; the game behaves as without the mod. |
+| **Host** | Starts the server in your game and lists the addresses friends can use, with Copy buttons. Then start a *Private game* as usual and invite friends through Steam. |
+| **Join** | Enter the host's address, or pick a host found on your local network. Then join through the Steam invite or *Join friend*. |
 
-## Requirements
+Network: the server uses **UDP 27000-27002**; LAN discovery uses **UDP 47777**. If Windows asks whether
+`luxon_server` or R.E.P.O. may use the network, allow it, or friends cannot connect. When playing over the
+internet without a VPN, the host must forward UDP 27000-27002 on their router.
 
-- A legal copy of R.E.P.O. on Steam. SemiLink does not support unlicensed copies.
-- BepInExPack for R.E.P.O.
-- Every player in the session installs SemiLink.
+All players need the same game version and the same SemiLink version.
 
-## Documentation
+## Building from source
 
-- [Project rules](AGENTS.md): read before contributing
-- [Documentation index](docs/README.md)
-- [Contributing](CONTRIBUTING.md)
+Requirements: a legal copy of R.E.P.O., [BepInEx 5](https://github.com/BepInEx/BepInEx/releases)
+installed in the game, the [.NET SDK](https://dotnet.microsoft.com/download) 8 or newer, and internet access
+for the first build.
+
+1. Copy `mod/Directory.Build.user.props.example` to `mod/Directory.Build.user.props` and set `GameDir` to the
+   folder that contains `REPO.exe`.
+2. Build:
+
+   ```bash
+   dotnet build mod/SemiLink.sln -c Release
+   ```
+
+   The build downloads the pinned LuxonServer release, verifies its SHA-256 and puts it under `server/` next
+   to the plugin. With `DeployToGame` set to `true`, the result is copied to
+   `<GameDir>/BepInEx/plugins/SemiLink`.
+
+Game, Photon and BepInEx assemblies are referenced from your installation and never included in this
+repository.
+
+Settings are stored in `BepInEx/config/semilink.repo.cfg`. To remove the mod, delete
+`BepInEx/plugins/SemiLink`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
+`doorstop_config.ini` and `.doorstop_version` from the game folder.
+
+## Planned
+
+- Steam invites that carry the host's address automatically.
+- Automatic port forwarding on routers that support UPnP.
+- Community relays: when no direct path exists, traffic goes through a relay that anyone can host, picked
+  automatically by ping.
+- Thunderstore release.
+
+## Not supported
+
+Unlicensed copies of the game. SemiLink is for people who own R.E.P.O. on Steam.
 
 ## Disclaimer
 

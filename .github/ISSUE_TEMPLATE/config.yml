@@ -1,8 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: LuxonServer issues
-    url: https://github.com/niansa/LuxonServer/issues
-    about: Problems in the server itself (protocol, crashes) belong upstream
-  - name: Security vulnerability
-    url: https://github.com/belomaxorka/repo-lan/security/advisories/new
-    about: Report privately, not as a public issue
