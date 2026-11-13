@@ -24,6 +24,8 @@ internal sealed class ServerStatus
     public string Name { get; set; } = "";
     public string Luxon { get; set; } = "";
     public bool Accepting { get; set; } = true;
+    public int Players { get; set; }
+    public int Rooms { get; set; }
 }
 
 /// <summary>
@@ -38,9 +40,10 @@ internal static class ServerCheck
     private const int TimeoutMs = 1500;
     private const int MaxStatusBytes = 64 * 1024;
 
-    public static Task<ServerStatus> RunAsync(ServerAddress address) => Task.Run(() => Run(address));
+    public static Task<ServerStatus> RunAsync(ServerAddress address, int statusPort = StatusPort) =>
+        Task.Run(() => Run(address, statusPort));
 
-    private static ServerStatus Run(ServerAddress address)
+    private static ServerStatus Run(ServerAddress address, int statusPort)
     {
         var status = new ServerStatus();
         IPAddress? ip;
@@ -61,7 +64,7 @@ internal static class ServerCheck
 
         status.Resolved = true;
         status.PingMs = Ping(ip);
-        ReadStatus(address, ip, status);
+        ReadStatus(address, ip, statusPort, status);
         return status;
     }
 
@@ -97,13 +100,13 @@ internal static class ServerCheck
     }
 
     /// <summary>Plain HTTP/1.0 over a socket: no TLS, no redirects, bounded size and time.</summary>
-    private static void ReadStatus(ServerAddress address, IPAddress ip, ServerStatus status)
+    private static void ReadStatus(ServerAddress address, IPAddress ip, int statusPort, ServerStatus status)
     {
         try
         {
             using var client = new TcpClient(ip.AddressFamily);
             var stopwatch = Stopwatch.StartNew();
-            var connect = client.BeginConnect(ip, StatusPort, null, null);
+            var connect = client.BeginConnect(ip, statusPort, null, null);
             if (!connect.AsyncWaitHandle.WaitOne(TimeoutMs) || !client.Connected)
             {
                 return;
@@ -142,6 +145,8 @@ internal static class ServerCheck
             status.Name = KnownServers.CleanName(JsonString(body, "name"));
             status.Luxon = JsonString(body, "luxon");
             status.Accepting = !Regex.IsMatch(body, "\"accepting\"\\s*:\\s*false");
+            status.Players = JsonInt(body, "players");
+            status.Rooms = JsonInt(body, "rooms");
         }
         catch (Exception e)
         {
@@ -154,5 +159,11 @@ internal static class ServerCheck
     {
         var match = Regex.Match(json, "\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
         return match.Success ? Regex.Unescape(match.Groups[1].Value) : "";
+    }
+
+    private static int JsonInt(string json, string key)
+    {
+        var match = Regex.Match(json, "\"" + key + "\"\\s*:\\s*(\\d{1,9})");
+        return match.Success ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : 0;
     }
 }

@@ -35,14 +35,20 @@ flowchart LR
 
 Every player installs the mod. Out of the box nothing changes: the game plays through Photon Cloud as usual.
 
-Haulnet adds a **HAULNET** section to the game's region page, which both *Private game* and *Public game*
-open. Pick where the game lives there, exactly like picking a region; the Photon regions stay below it.
+Haulnet adds two tabs to the game's region page, which both *Private game* and *Public game* open:
+**HAULNET** and **PHOTON CLOUD** (the game's own regions, unchanged). The tab you used last opens next time. Pick
+where the game lives, exactly like picking a region.
 
 - **On my PC** (private games): like Minecraft's "Open to LAN". Enter the UDP port (the last one is
   prefilled, 27000 by default); a server starts inside your game on that port and the next two. The lobby shows
   "Haulnet · on your PC · UDP 27000-27002". How friends reach your PC (same network, a VPN, a forwarded port) is
   up to you; Haulnet does not guess. Invite friends through Steam; the invite carries your addresses and port.
   The server stops when you return to the main menu.
+- **This PC**: a `haulnet-server` running on your own PC, when its status endpoint answers.
+- **Community servers**: one row per city from the public
+  [server list](https://haulnet.github.io/haulnet-servers/v1/servers.json), with ping. Haulnet checks every
+  server of the city and uses one that answers, accepts games and runs a compatible version: for a private game
+  the least busy of the closest ones, for a public game the busiest one, so public players of a city meet.
 - **Your servers**: servers you played on recently (up to 5) with their ping, and servers you saved in the
   config file. A server that runs the `haulnet-server` package shows its name and whether it is full.
 - **+ Server by address...**: type `host` or `host:port` (port 27000 if not given; Ctrl+V pastes). Use it for
@@ -90,7 +96,9 @@ Game, Photon and BepInEx assemblies are referenced from your installation and ne
 repository.
 
 Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
-(`[Servers] Saved = Name=host[:port];...`) and the recent list. To remove the mod, delete
+(`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL
+(`RegistryUrl`; a community can use its own list in the same format). The last downloaded server list is kept
+in `BepInEx/cache/Haulnet` for offline use. To remove the mod, delete
 `BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
 `doorstop_config.ini` and `.doorstop_version` from the game folder.
 

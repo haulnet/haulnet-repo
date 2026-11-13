@@ -42,6 +42,32 @@ internal sealed class HaulnetConfig
             "LastAddress",
             "",
             "Last address typed in \"Server by address\".");
+
+        _registryUrl = config.Bind(
+            "Servers",
+            "RegistryUrl",
+            DefaultRegistryUrl,
+            "Public server list shown on the region page. A community can point it to its own list in the same " +
+            "format (haulnet-servers, schema v1); http(s):// or file:///.");
+
+        _lastTab = config.Bind(
+            "Servers",
+            "LastTab",
+            "haulnet",
+            "Region page tab opened last: haulnet or photon.");
+    }
+
+    public const string DefaultRegistryUrl = "https://haulnet.github.io/haulnet-servers/v1/servers.json";
+
+    private readonly ConfigEntry<string> _registryUrl;
+    private readonly ConfigEntry<string> _lastTab;
+
+    public string RegistryUrl => string.IsNullOrWhiteSpace(_registryUrl.Value) ? DefaultRegistryUrl : _registryUrl.Value.Trim();
+
+    public bool LastTabPhoton
+    {
+        get => _lastTab.Value == "photon";
+        set => _lastTab.Value = value ? "photon" : "haulnet";
     }
 
     public int HostPort

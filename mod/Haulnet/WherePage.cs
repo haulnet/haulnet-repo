@@ -3,38 +3,46 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Haulnet;
 
 /// <summary>
-/// The game's region page becomes "where to play" (ADR 0015): above the Photon regions the mod adds a Haulnet
-/// section with "On my PC" (private games only), saved and recent servers, and "Server by address". Choosing a
-/// row sets the target for this game and continues the game's own flow exactly like a region would (saves page
-/// for a private game, the Public game page for a public one).
+/// The game's region page becomes "where to play" (ADR 0015) with two tabs: HAULNET (On my PC, a haulnet-server
+/// running on this PC, community servers from the registry, recent and saved servers, Server by address) and
+/// PHOTON CLOUD (the game's own region rows, untouched). Choosing a row sets the target for this game and
+/// continues the game's own flow exactly like a region would (saves page for a private game, the Public game page
+/// for a public one).
 /// </summary>
 /// <remarks>
 /// Hooks (game code), all optional; without them the page is the unmodded one and the game plays through Photon:
 /// <list type="bullet">
 /// <item><c>MenuPageRegions.Start</c> prefix: clear the previous choice before the page connects to Photon;
-/// postfix: add the rows. The page instantiates its own rows only after Photon answers, from
-/// <c>transformStartPosition</c> downwards, 32 units apart; the Haulnet rows take the top and move that start
-/// position down, so they work even when Photon Cloud is unreachable.</item>
-/// <item><c>MenuPageRegions.PickRegion</c> prefix: rows carry codes <c>haulnet:*</c>, handled here.</item>
-/// <item><c>MenuTextInput.Update</c> postfix: Ctrl+V in the address popup (the game's text field has no paste).</item>
+/// postfix: add the tabs and rows. The page instantiates its region rows only after Photon answers, from
+/// <c>transformStartPosition</c> downwards, 32 units apart, into the same parent; both tabs share that space and
+/// the hidden tab's rows are inactive.</item>
+/// <item><c>MenuPageRegions.PickRegion</c> prefix: Haulnet rows carry codes <c>haulnet:*</c>, handled here.</item>
+/// <item><c>MenuTextInput.Update</c> postfix: Ctrl+V in our popups (the game's text field has no paste).</item>
 /// </list>
+/// The tab buttons are copies of the page's own "Back" button (<c>MenuButton</c> with the persistent
+/// <c>ExitPage</c> listener). If it cannot be found, both lists are shown one under the other with section titles.
 /// </remarks>
 internal static class WherePage
 {
     private const string CodePrefix = "haulnet:";
     private const string CodeMyPc = "haulnet:mypc";
     private const string CodeAddress = "haulnet:address";
-    private const string CodeServer = "haulnet:server:";
+    private const string CodeRow = "haulnet:row:";
     private const float RowStep = 32f;
     private const float CheckTimeoutSeconds = 6f;
+
+    // A server within this many ms of the best one in its city counts as "as close" when balancing private games.
+    private const int SamePingMs = 15;
 
     private static readonly Color PingGood = new(0.2f, 0.8f, 0.2f);
     private static readonly Color PingFair = new(0.8f, 0.8f, 0.2f);
@@ -42,18 +50,28 @@ internal static class WherePage
     private static readonly Color PingBad = new(0.8f, 0.2f, 0.2f);
     private static readonly Color Grey = new(0.6f, 0.6f, 0.6f);
 
-    // Game internals: MenuPageRegions.type (internal enum), MenuElementRegion.regionCode, DataDirector.networkRegion,
-    // MenuTextInput.textCurrent / InputTextSet.
+    // Game internals: MenuPageRegions.type (internal enum), MenuElementRegion.regionCode,
+    // MenuTextInput.textCurrent / InputTextSet, MenuScrollBox.RecalculateScrollHeight.
     private static readonly FieldInfo? PageTypeField = AccessTools.Field(typeof(MenuPageRegions), "type");
     private static readonly AccessTools.FieldRef<MenuElementRegion, string> RegionCode =
         AccessTools.FieldRefAccess<MenuElementRegion, string>("regionCode");
     private static readonly AccessTools.FieldRef<MenuTextInput, string> TextCurrent =
         AccessTools.FieldRefAccess<MenuTextInput, string>("textCurrent");
     private static readonly MethodInfo? InputTextSet = AccessTools.Method(typeof(MenuTextInput), "InputTextSet");
+    private static readonly MethodInfo? RecalculateScroll = AccessTools.Method(typeof(MenuScrollBox), "RecalculateScrollHeight");
 
-    private static readonly List<ServerRow> Rows = new();
+    private static readonly List<Row> Rows = new();
+    private static readonly List<GameObject> HaulnetObjects = new();
+    private static MenuPageRegions? _page;
+
+    // Children of the list that existed before the page filled it (the inactive row template): never shown.
+    private static readonly HashSet<Transform> Untouched = new();
+    private static Vector3 _contentStart;
+    private static MenuButton? _tabHaulnet;
+    private static MenuButton? _tabPhoton;
+    private static bool _photonTab;
     private static MenuElementRegion? _addressRow;
-    private static MenuTextInput? _addressInput;
+    private static MenuTextInput? _pasteInput;
     private static string _draft = "";
     private static bool _continuing;
     private static bool _busy;
@@ -84,7 +102,7 @@ internal static class WherePage
         }
         else
         {
-            Plugin.Log.LogWarning("MenuTextInput.Update not found; Ctrl+V in the address popup is off.");
+            Plugin.Log.LogWarning("MenuTextInput.Update not found; Ctrl+V in Haulnet popups is off.");
         }
     }
 
@@ -101,58 +119,58 @@ internal static class WherePage
     {
         try
         {
-            Build(__instance);
+            Setup(__instance);
         }
         catch (Exception e)
         {
-            Plugin.Log.LogError($"Could not add Haulnet rows to the region page: {e}");
+            Plugin.Log.LogError($"Could not add Haulnet to the region page: {e}");
         }
     }
 
     private static bool IsHostFlow(MenuPageRegions page) => Convert.ToInt32(PageTypeField!.GetValue(page)) == 0;
 
-    private static void Build(MenuPageRegions page)
+    private static void Setup(MenuPageRegions page)
     {
-        Rows.Clear();
-        _addressRow = null;
+        _page = page;
+        _tabHaulnet = null;
+        _tabPhoton = null;
         _busy = false;
 
         var start = page.transformStartPosition;
         var parent = start.parent;
-        var originalStart = start.position;
-        var pos = originalStart;
-
-        var haulnetLabelPos = pos;
-        pos.y -= RowStep;
-
-        var rows = new List<MenuElementRegion>();
-        if (IsHostFlow(page))
+        var tabPos = start.position;
+        Untouched.Clear();
+        foreach (Transform child in parent)
         {
-            var port = Plugin.Settings.HostPort;
-            rows.Add(AddRow(page, parent, ref pos, CodeMyPc, Text.RowOnMyPc, $"UDP {port}", Grey));
+            Untouched.Add(child);
         }
 
-        foreach (var server in KnownServers.All())
+        _contentStart = tabPos - new Vector3(0f, RowStep, 0f);
+
+        // The scroll box may switch rows on and off by visibility; the tabs decide visibility here.
+        if (page.menuScrollBox != null)
         {
-            var element = AddRow(page, parent, ref pos, CodeServer + Rows.Count, server.Display, Text.Checking, Grey);
-            Rows.Add(new ServerRow(server, element));
-            rows.Add(element);
+            page.menuScrollBox.disableHiddenChildren = false;
         }
 
-        _addressRow = AddRow(page, parent, ref pos, CodeAddress, Text.RowByAddress, "", Grey);
-        rows.Add(_addressRow);
-
-        var template = rows[0].textName;
-        AddLabel(template, parent, rows[0].transform.position, haulnetLabelPos, Text.SectionHaulnet);
-        AddLabel(template, parent, rows[0].transform.position, pos, Text.SectionPhoton);
-        pos.y -= RowStep;
-
-        // The game's own rows start below ours; its loading animation moves with them.
-        var shift = originalStart.y - pos.y;
-        start.position = pos;
-        if (page.loadingGraphics != null)
+        var tabsMade = MakeTabs(page, parent, tabPos);
+        if (tabsMade)
         {
-            page.loadingGraphics.transform.position -= new Vector3(0f, shift, 0f);
+            // Both lists start under the tab buttons; the game places its rows from the start position.
+            start.position = _contentStart;
+            if (page.loadingGraphics != null)
+            {
+                page.loadingGraphics.transform.position -= new Vector3(0f, RowStep, 0f);
+            }
+
+            BuildHaulnetRows(page, sectionTitles: false);
+            ShowTab(Plugin.Settings.LastTabPhoton, save: false);
+            Plugin.Runner.StartCoroutine(KeepTabs(page));
+        }
+        else
+        {
+            // Fallback without tab buttons: Haulnet rows with section titles above the Photon rows.
+            BuildHaulnetRows(page, sectionTitles: true);
         }
 
         // The page reveals its list only after Photon answered; ours must be usable before that.
@@ -161,8 +179,119 @@ internal static class WherePage
             page.scrollCanvasGroup.alpha = 1f;
         }
 
-        Plugin.Runner.StartCoroutine(UpdateServerRows(Rows.ToList()));
-        Plugin.Log.LogInfo($"Region page: {rows.Count} Haulnet row(s) added ({Rows.Count} known server(s)).");
+        Plugin.Runner.StartCoroutine(Registry.Refresh(changed =>
+        {
+            if (changed && _page == page && page != null)
+            {
+                BuildHaulnetRows(page, sectionTitles: !tabsMade);
+                if (tabsMade)
+                {
+                    ShowTab(_photonTab, save: false);
+                }
+            }
+        }));
+    }
+
+    /// <summary>(Re)creates the Haulnet rows. Called again when a fresh server list arrives.</summary>
+    private static void BuildHaulnetRows(MenuPageRegions page, bool sectionTitles)
+    {
+        foreach (var obj in HaulnetObjects.Where(o => o != null))
+        {
+            Object.Destroy(obj);
+        }
+
+        HaulnetObjects.Clear();
+        Rows.Clear();
+        _addressRow = null;
+
+        var parent = page.transformStartPosition.parent;
+        var pos = sectionTitles ? page.transformStartPosition.position : _contentStart;
+        var titlePos = pos;
+        if (sectionTitles)
+        {
+            pos.y -= RowStep;
+        }
+
+        var elements = new List<MenuElementRegion>();
+        if (IsHostFlow(page))
+        {
+            elements.Add(AddRow(page, parent, ref pos, CodeMyPc, Text.RowOnMyPc, $"UDP {Plugin.Settings.HostPort}", Grey));
+        }
+
+        // A haulnet-server running on this PC (its status endpoint answers on loopback).
+        var loopback = ServerAddress.FromIp(System.Net.IPAddress.Loopback, 0);
+        var local = LocalServer();
+        if (local != null)
+        {
+            var row = new Row(Text.RowThisPc(local.Name), loopback, null) { SavedName = local.Name, KeepName = true };
+            row.Status = local;
+            row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, row.Name, "", Grey);
+            Rows.Add(row);
+            elements.Add(row.Element);
+            ShowStatus(row);
+        }
+
+        var registryAddresses = new List<ServerAddress>();
+        foreach (var city in Registry.Cities)
+        {
+            var row = new Row(city.DisplayName, null, city);
+            row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, city.DisplayName, Text.Checking, Grey);
+            Rows.Add(row);
+            elements.Add(row.Element);
+            registryAddresses.AddRange(city.Servers.Select(s => s.Address));
+        }
+
+        foreach (var known in KnownServers.All())
+        {
+            if (registryAddresses.Any(a => a.SameAs(known.Address)) || (local != null && known.Address.SameAs(loopback)))
+            {
+                continue; // Already listed as a community server or as this PC's server.
+            }
+
+            var row = new Row(known.Display, known.Address, null) { SavedName = known.Name };
+            row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, known.Display, Text.Checking, Grey);
+            Rows.Add(row);
+            elements.Add(row.Element);
+        }
+
+        _addressRow = AddRow(page, parent, ref pos, CodeAddress, Text.RowByAddress, "", Grey);
+        elements.Add(_addressRow);
+
+        if (sectionTitles)
+        {
+            var template = elements[0];
+            AddLabel(template.textName, parent, template.transform.position, titlePos, Text.SectionHaulnet);
+            AddLabel(template.textName, parent, template.transform.position, pos, Text.SectionPhoton);
+            pos.y -= RowStep;
+            var shift = page.transformStartPosition.position.y - pos.y;
+            page.transformStartPosition.position = pos;
+            if (page.loadingGraphics != null)
+            {
+                page.loadingGraphics.transform.position -= new Vector3(0f, shift, 0f);
+            }
+        }
+
+        Plugin.Runner.StartCoroutine(CheckRows(Rows.Where(r => r.Status == null).ToList(), IsHostFlow(page)));
+        Plugin.Log.LogInfo($"Region page: {elements.Count} Haulnet row(s): {Registry.Cities.Count} city(ies), {(local != null ? "a" : "no")} local haulnet-server.");
+    }
+
+    private static ServerStatus? LocalServer()
+    {
+        try
+        {
+            var check = ServerCheck.RunAsync(ServerAddress.FromIp(System.Net.IPAddress.Loopback, 0));
+            // Loopback answers or refuses at once; do not hold the menu for long either way.
+            if (check.Wait(TimeSpan.FromMilliseconds(600)) && check.Result.HasStatus)
+            {
+                return check.Result;
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug($"Local status check failed: {e.Message}");
+        }
+
+        return null;
     }
 
     private static MenuElementRegion AddRow(MenuPageRegions page, Transform parent, ref Vector3 pos, string code, string name, string hint, Color hintColor)
@@ -179,6 +308,7 @@ internal static class WherePage
         element.textPing.color = hintColor;
         element.parentPage = page;
         RegionCode(element) = code;
+        HaulnetObjects.Add(element.gameObject);
         pos.y -= RowStep;
         return element;
     }
@@ -205,28 +335,210 @@ internal static class WherePage
         tmp.color = Popups.Accent;
         tmp.fontSize = template.fontSize * 0.8f;
         tmp.raycastTarget = false;
+        HaulnetObjects.Add(label);
     }
 
-    /// <summary>Fills in ping, name and load of the server rows as the checks finish.</summary>
-    private static IEnumerator UpdateServerRows(List<ServerRow> rows)
+    // ---------- Tabs ----------
+
+    /// <summary>Two copies of the page's "Back" button, side by side at the top of the list.</summary>
+    private static bool MakeTabs(MenuPageRegions page, Transform parent, Vector3 pos)
+    {
+        try
+        {
+            var back = page.GetComponentsInChildren<MenuButton>(true).FirstOrDefault(IsBackButton);
+            if (back == null)
+            {
+                Plugin.Log.LogWarning("Region page: Back button not found; showing Haulnet rows without tabs.");
+                return false;
+            }
+
+            _tabHaulnet = CloneButton(back, parent, pos, Text.SectionHaulnet, () => ShowTab(false, save: true));
+
+            // The second tab starts where the first one's text ends, plus a gap.
+            var width = ((RectTransform)_tabHaulnet.transform).rect.width * _tabHaulnet.transform.lossyScale.x;
+            var gap = RowStep * _tabHaulnet.transform.lossyScale.x;
+            _tabPhoton = CloneButton(back, parent, pos + new Vector3(width + gap, 0f, 0f), Text.SectionPhoton, () => ShowTab(true, save: true));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning($"Region page: could not make tabs ({e.Message}); showing Haulnet rows without tabs.");
+            return false;
+        }
+    }
+
+    private static bool IsBackButton(MenuButton button)
+    {
+        var ui = button.GetComponent<Button>();
+        if (ui == null)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < ui.onClick.GetPersistentEventCount(); i++)
+        {
+            if (ui.onClick.GetPersistentMethodName(i) == nameof(MenuPageRegions.ExitPage))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static MenuButton CloneButton(MenuButton template, Transform parent, Vector3 position, string text, Action onClick)
+    {
+        // Clone while the template is inactive, so the copy's Awake runs after we set text and position.
+        var wasActive = template.gameObject.activeSelf;
+        template.gameObject.SetActive(false);
+        var copy = Object.Instantiate(template.gameObject, parent, worldPositionStays: true);
+        template.gameObject.SetActive(wasActive);
+
+        copy.name = "Haulnet.Tab " + text;
+        copy.transform.position = position;
+        // The game's LocalizationChangedEvent writes the localized "Back" into the text on Start; ours is fixed.
+        foreach (var localizer in copy.GetComponentsInChildren<LocalizationChangedEvent>(true))
+        {
+            Object.DestroyImmediate(localizer);
+        }
+
+        var button = copy.GetComponent<MenuButton>();
+        button.buttonTextString = text;
+        button.customColors = true;
+        var ui = copy.GetComponent<Button>();
+        ui.onClick = new Button.ButtonClickedEvent();
+        ui.onClick.AddListener(() => onClick());
+        copy.SetActive(true);
+        return button;
+    }
+
+    private static void ShowTab(bool photon, bool save)
+    {
+        _photonTab = photon;
+        if (save)
+        {
+            Plugin.Settings.LastTabPhoton = photon;
+        }
+
+        foreach (var obj in HaulnetObjects.Where(o => o != null))
+        {
+            obj.SetActive(!photon);
+        }
+
+        StyleTab(_tabHaulnet, !photon);
+        StyleTab(_tabPhoton, photon);
+        ApplyPhotonVisibility();
+        Recalculate();
+    }
+
+    private static void StyleTab(MenuButton? tab, bool selected)
+    {
+        if (tab == null)
+        {
+            return;
+        }
+
+        tab.colorNormal = selected ? Popups.Accent : Color.gray;
+        tab.colorHover = selected ? Popups.Accent : Color.white;
+        tab.colorClick = Popups.Accent;
+    }
+
+    /// <summary>The game adds its region rows later; keep them on the Photon tab only.</summary>
+    private static IEnumerator KeepTabs(MenuPageRegions page)
+    {
+        var lastCount = -1;
+        while (page != null && _page == page)
+        {
+            var count = page.transformStartPosition.parent.childCount;
+            if (count != lastCount)
+            {
+                lastCount = count;
+                ApplyPhotonVisibility();
+                Recalculate();
+            }
+
+            yield return null;
+        }
+    }
+
+    private static void ApplyPhotonVisibility()
+    {
+        var page = _page;
+        if (page == null)
+        {
+            return;
+        }
+
+        foreach (Transform child in page.transformStartPosition.parent)
+        {
+            var region = child.GetComponent<MenuElementRegion>();
+            if (region != null && !Untouched.Contains(child) && !(RegionCode(region) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal))
+            {
+                child.gameObject.SetActive(_photonTab);
+            }
+        }
+
+        if (page.loadingGraphics != null && page.loadingGraphics.gameObject.activeSelf != _photonTab && !LoadingFinished(page))
+        {
+            page.loadingGraphics.gameObject.SetActive(_photonTab);
+        }
+    }
+
+    // The page's coroutine fades its list in once Photon answered (alpha goes up); until then loading is shown.
+    private static bool LoadingFinished(MenuPageRegions page) =>
+        page.transformStartPosition.parent.Cast<Transform>()
+            .Any(t => !Untouched.Contains(t) && t.GetComponent<MenuElementRegion>() is { } r && !(RegionCode(r) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal));
+
+    private static void Recalculate()
+    {
+        var box = _page != null ? _page.menuScrollBox : null;
+        if (box == null || RecalculateScroll == null)
+        {
+            return;
+        }
+
+        try
+        {
+            RecalculateScroll.Invoke(box, new object[] { false });
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug($"Scroll height not recalculated: {e.Message}");
+        }
+    }
+
+    // ---------- Checking servers ----------
+
+    /// <summary>Fills in ping, name and load as the checks finish; picks the server of each city.</summary>
+    private static IEnumerator CheckRows(List<Row> rows, bool hostFlow)
     {
         foreach (var row in rows)
         {
-            row.Check = ServerCheck.RunAsync(row.Server.Address);
+            row.Checks = row.City != null
+                ? row.City.Servers.Select(s => ServerCheck.RunAsync(s.Address, s.StatusPort)).ToList()
+                : new List<Task<ServerStatus>> { ServerCheck.RunAsync(row.Address!.Value) };
         }
 
         var deadline = Time.realtimeSinceStartup + CheckTimeoutSeconds;
         while (rows.Any(r => !r.Shown) && Time.realtimeSinceStartup < deadline)
         {
-            foreach (var row in rows.Where(r => !r.Shown && r.Check!.IsCompleted))
+            foreach (var row in rows.Where(r => !r.Shown && r.Checks!.All(c => c.IsCompleted)))
             {
                 row.Shown = true;
                 if (row.Element == null)
                 {
-                    continue; // Page closed.
+                    continue; // Page closed or rows rebuilt.
                 }
 
-                row.Status = row.Check!.IsFaulted ? null : row.Check.Result;
+                if (row.City != null)
+                {
+                    PickCityServer(row, hostFlow);
+                }
+                else
+                {
+                    row.Status = row.Checks![0].IsFaulted ? null : row.Checks[0].Result;
+                }
+
                 ShowStatus(row);
             }
 
@@ -235,12 +547,61 @@ internal static class WherePage
 
         foreach (var row in rows.Where(r => !r.Shown && r.Element != null))
         {
-            row.Element.textPing.text = Text.NoPing;
-            row.Element.textPing.color = Grey;
+            row.Shown = true;
+            if (row.City != null)
+            {
+                PickCityServer(row, hostFlow);
+                ShowStatus(row);
+            }
+            else
+            {
+                row.Element.textPing.text = Text.NoPing;
+                row.Element.textPing.color = Grey;
+            }
         }
     }
 
-    private static void ShowStatus(ServerRow row)
+    /// <summary>
+    /// A city may have several servers. Usable: status endpoint answers, accepts new games, runs a LuxonServer
+    /// version the list marks compatible. Private games go to the least loaded of the closest servers; public
+    /// games go to the busiest one, so public players of a city meet on one server.
+    /// </summary>
+    private static void PickCityServer(Row row, bool hostFlow)
+    {
+        var compatible = Registry.CompatibleLuxon;
+        var usable = row.City!.Servers
+            .Select((server, i) => (server, status: row.Checks![i].IsCompleted && !row.Checks[i].IsFaulted ? row.Checks[i].Result : null))
+            .Where(x => x.status is { HasStatus: true, Accepting: true }
+                        && (compatible.Count == 0 || compatible.Contains(x.status.Luxon)))
+            .ToList();
+
+        if (usable.Count == 0)
+        {
+            row.Chosen = null;
+            row.Status = null;
+            Plugin.Log.LogInfo($"{row.City.DisplayName}: no usable server.");
+            return;
+        }
+
+        (RegistryServer server, ServerStatus? status) chosen;
+        if (hostFlow)
+        {
+            var best = usable.Min(x => Ping(x.status!));
+            chosen = usable.Where(x => Ping(x.status!) <= best + SamePingMs).OrderBy(x => x.status!.Players).ThenBy(x => Ping(x.status!)).First();
+        }
+        else
+        {
+            chosen = usable.OrderByDescending(x => x.status!.Players).ThenBy(x => Ping(x.status!)).First();
+        }
+
+        row.Chosen = chosen.server;
+        row.Status = chosen.status;
+        Plugin.Log.LogInfo($"{row.City.DisplayName}: {usable.Count} usable server(s), chose {chosen.server.Id} ({chosen.status!.Players} players, {chosen.status.PingMs} ms).");
+    }
+
+    private static int Ping(ServerStatus status) => status.PingMs >= 0 ? status.PingMs : int.MaxValue / 2;
+
+    private static void ShowStatus(Row row)
     {
         var status = row.Status;
         var ping = row.Element.textPing;
@@ -251,9 +612,9 @@ internal static class WherePage
             return;
         }
 
-        if (row.Server.Name.Length == 0 && status.Name.Length > 0)
+        if (row.City == null && !row.KeepName && row.SavedName.Length == 0 && status.Name.Length > 0 && row.Address.HasValue)
         {
-            row.Element.textName.text = new KnownServer(row.Server.Address, status.Name, false).Display;
+            row.Element.textName.text = new KnownServer(row.Address.Value, status.Name, false).Display;
         }
 
         if (status.HasStatus && !status.Accepting)
@@ -323,25 +684,49 @@ internal static class WherePage
         if (code == CodeMyPc)
         {
             OpenPortPopup(page);
+            return;
         }
-        else if (code == CodeAddress)
+
+        if (code == CodeAddress)
         {
             OpenAddressPopup(page);
+            return;
         }
-        else if (code.StartsWith(CodeServer, StringComparison.Ordinal)
-                 && int.TryParse(code.Substring(CodeServer.Length), out var index) && index >= 0 && index < Rows.Count)
+
+        if (!code.StartsWith(CodeRow, StringComparison.Ordinal)
+            || !int.TryParse(code.Substring(CodeRow.Length), out var index) || index < 0 || index >= Rows.Count)
         {
-            var row = Rows[index];
-            if (row.Status is { HasStatus: true, Accepting: false })
+            return;
+        }
+
+        var row = Rows[index];
+        if (row.City != null)
+        {
+            if (!row.Shown)
             {
-                Popups.ShowNow(Text.FullHeader, Text.FullBody(row.Server.Address.Display));
+                return; // Still checking its servers.
+            }
+
+            if (row.Chosen == null)
+            {
+                Popups.ShowNow(Text.NoServerHeader, Text.NoServerBody(row.City.DisplayName));
                 return;
             }
 
-            var name = row.Server.Name.Length > 0 ? row.Server.Name : row.Status?.Name ?? "";
-            Session.ChooseServer(row.Server.Address, name);
+            Session.ChooseServer(row.Chosen.Address, row.Chosen.DisplayName);
             Continue(page);
+            return;
         }
+
+        if (row.Status is { HasStatus: true, Accepting: false })
+        {
+            Popups.ShowNow(Text.FullHeader, Text.FullBody(row.Address!.Value.Display));
+            return;
+        }
+
+        var name = row.SavedName.Length > 0 ? row.SavedName : row.Status?.Name ?? "";
+        Session.ChooseServer(row.Address!.Value, name);
+        Continue(page);
     }
 
     /// <summary>
@@ -356,12 +741,12 @@ internal static class WherePage
             Plugin.Settings.HostPort.ToString(), Text.Create, null,
             upperOnly: false, maxLength: 5, allowEmpty: false,
             text => OnPortEntered(page, text), null);
-        _addressInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+        _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
     }
 
     private static void OnPortEntered(MenuPageRegions page, string text)
     {
-        _addressInput = null;
+        _pasteInput = null;
         text = (text ?? "").Trim();
         if (!int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var port)
             || port < 1024 || port > 65533)
@@ -402,6 +787,7 @@ internal static class WherePage
         _continuing = true;
         try
         {
+            _page = null; // Stop the tab keeper; the page closes now.
             page.PickRegion(HostServer.RegionCode);
             MenuManager.instance.MenuEffectClick(MenuManager.MenuClickEffectType.Confirm, null, 1f, 1f);
         }
@@ -422,12 +808,12 @@ internal static class WherePage
             initial, Text.Connect, null,
             upperOnly: false, maxLength: 100, allowEmpty: false,
             text => OnAddressEntered(page, text), null);
-        _addressInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+        _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
     }
 
     private static void OnAddressEntered(MenuPageRegions page, string text)
     {
-        _addressInput = null;
+        _pasteInput = null;
         _draft = (text ?? "").Trim();
         if (!ServerAddress.TryParse(_draft, out var address, out var error))
         {
@@ -489,10 +875,10 @@ internal static class WherePage
         Continue(page);
     }
 
-    /// <summary>Ctrl+V for the address field. The game's text field only takes typed characters.</summary>
+    /// <summary>Ctrl+V for our popups' text field. The game's text field only takes typed characters.</summary>
     private static void AfterTextInputUpdate(MenuTextInput __instance)
     {
-        if (_addressInput == null || !ReferenceEquals(__instance, _addressInput))
+        if (_pasteInput == null || !ReferenceEquals(__instance, _pasteInput))
         {
             return;
         }
@@ -517,18 +903,34 @@ internal static class WherePage
         }
     }
 
-    private sealed class ServerRow
+    private sealed class Row
     {
-        public ServerRow(KnownServer server, MenuElementRegion element)
+        public Row(string name, ServerAddress? address, RegistryCity? city)
         {
-            Server = server;
-            Element = element;
+            Name = name;
+            Address = address;
+            City = city;
         }
 
-        public KnownServer Server { get; }
-        public MenuElementRegion Element { get; }
-        public System.Threading.Tasks.Task<ServerStatus>? Check { get; set; }
+        public string Name { get; }
+
+        /// <summary>Server of a single-server row; null for a city row.</summary>
+        public ServerAddress? Address { get; }
+
+        /// <summary>City of a community row; null otherwise.</summary>
+        public RegistryCity? City { get; }
+
+        public string SavedName { get; set; } = "";
+
+        /// <summary>The row text is final (this PC's server); do not replace it with the status name.</summary>
+        public bool KeepName { get; set; }
+        public MenuElementRegion Element { get; set; } = null!;
+        public List<Task<ServerStatus>>? Checks { get; set; }
         public ServerStatus? Status { get; set; }
+
+        /// <summary>The server of the city this game would go to.</summary>
+        public RegistryServer? Chosen { get; set; }
+
         public bool Shown { get; set; }
     }
 }
