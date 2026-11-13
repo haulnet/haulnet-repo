@@ -18,5 +18,5 @@ Vulnerabilities in LuxonServer itself should be reported to the
 
 ## Hardening guidance for hosts
 
-- Prefer a virtual LAN (Radmin VPN, ZeroTier, Tailscale) over exposing ports to the internet.
+- Prefer a LAN or a VPN between players (WireGuard, Tailscale, ZeroTier, Radmin) over exposing ports to the internet.
 - If you forward ports, forward only the UDP ports the server needs and stop the server when not playing.

@@ -1,173 +1,121 @@
-# Connectivity: built-in tunnel and SemiLink Hub
+# Connectivity
 
-Status: **design, proposed** ([ADR 0006](decisions/0006-built-in-connectivity.md)).
+Status: **design, proposed** ([ADR 0006](decisions/0006-layered-connectivity.md)).
 
-## Goal
+## The problem we solve
 
-Players connect to each other **without third-party tools** (Radmin VPN, ZeroTier, Tailscale, Hamachi),
-**without administrator rights**, and without router configuration in the common case. All
-infrastructure involved can be self-hosted by anyone, as a single binary or a Docker container.
+R.E.P.O. has no local mode. Even two players on the same LAN, or on a VPN they already use, go through
+Photon Cloud. SemiLink restores the **LAN / point-to-point** experience, like "Open to LAN" in Minecraft:
+the host's game *is* the server, and friends connect to the host directly.
 
-Third-party virtual LANs and plain IP addresses keep working as a fallback ("Direct" path), but are not
-required.
+Note that R.E.P.O.'s networking (Photon PUN) always needs *a* server process: one player cannot connect
+straight into another player's game without it. SemiLink runs that server **inside the host's game**
+(LuxonServer, started by the Host button), so for players it behaves like peer-to-peer: no separate server
+to rent, install or maintain.
 
-## How online games solve this
+## One uniform interface: an IP address
 
-| Model | Examples | How it works |
-|---|---|---|
-| Dedicated server | Photon Cloud, CS2 servers | Everyone connects to a server with a public IP. Simple, but someone pays for and hosts it, and latency depends on its location |
-| Listen server + NAT traversal + relay | Steam Networking (SDR), Epic Online Services P2P, Unity Relay, WebRTC (ICE/STUN/TURN) | One player hosts. A **rendezvous** server introduces peers and tells each its public address; peers **punch holes** through their NATs and talk directly; if that fails, traffic goes through a **relay** |
+Whatever connects the players, the game and the player see the same thing: **the host's address and
+port**. This keeps the system simple and standard:
 
-SemiLink supports both:
-
-- **Listen server** (default): the host's game runs the server; friends reach it through the SemiLink
-  tunnel, which uses NAT traversal with a relay fallback, coordinated by a **SemiLink Hub**.
-- **Dedicated server**: LuxonServer, and optionally a Hub, on a VPS or home server with a public IP;
-  clients connect directly.
-
-## Why a tunnel works with the game unchanged
-
-Facts from the game code ([open questions](open-questions.md)):
-
-- `DataDirector.PhotonSetAppId()` is the single place where the game sets `AppSettings.Server`
-  and `Port` before every connect. The game itself contains a debug "local server" mode that uses the same fields.
-- The game uses Photon's alternative UDP ports (27000–27002) and UDP.
-
-So the client mod can point the game at **`127.0.0.1`**. On a client PC, the mod listens on those
-loopback ports and forwards datagrams through the tunnel to the host, where the host mod hands them to
-LuxonServer. The game and LuxonServer each believe they talk to a local peer.
+- every existing tool that gives two PCs IP connectivity works out of the box;
+- SemiLink never has to know which tool the players use;
+- an optional built-in helper (layer 2) can be added later without changing anything else.
 
 ```mermaid
 flowchart LR
-    subgraph C[Friend's PC]
-        GC[Game<br/>Photon client] -- UDP 127.0.0.1 --> TC[SemiLink tunnel<br/>entrance]
+    subgraph host[Host PC]
+        GA[Host's game + SemiLink]
+        S[[Server inside the host's game<br/>LuxonServer]]
+        GA --> S
     end
-    subgraph H[Host's PC]
-        TH[SemiLink tunnel<br/>exit] -- UDP 127.0.0.1 --> L[[LuxonServer]]
-        GH[Host's game] -- UDP 127.0.0.1 --> L
-    end
-    TC == "one UDP flow: direct, hole-punched or relayed" ==> TH
+    GB[Friend's game + SemiLink] -- "host IP:port" --> S
+    N{{"any IP path:<br/>LAN · WireGuard · Radmin · ZeroTier<br/>Tailscale · IPv6 · forwarded port"}}
+    GB -.- N -.- S
 ```
 
-Key properties:
+## Layer 1: plain IP (MVP)
 
-- **No extra reliability layer.** Photon already has its own reliable UDP; the tunnel forwards
-  datagrams as-is (unreliable, unordered), so it adds no head-of-line blocking and only a few bytes of
-  header per packet.
-- **LuxonServer's external address is `127.0.0.1`.** Master and Game server addresses it hands out
-  resolve to the local tunnel entrance on every client.
-- **Multiplexing:** each game-side UDP flow (port × local source port) maps to a stream ID; on the host,
-  each remote stream gets its own loopback socket towards LuxonServer, so the server sees independent peers.
-- **LuxonServer binds to loopback only** if configurable (to verify), so it is never exposed and
-  triggers no firewall prompt. Remote players can reach it only through the tunnel.
+| Feature | What it does |
+|---|---|
+| **Host** | Starts the server inside the host's game and shows the addresses friends can use |
+| **Join by address** | Friend types `IP` or `IP:port` |
+| **LAN discovery** | Host announces the session on the local network (UDP broadcast/multicast); friends see it in a list and click it. Works on a LAN and on VPNs that pass broadcast |
+| **Address hints** | Host screen lists its addresses with labels: *LAN*, *VPN adapter* (WireGuard, Radmin, ZeroTier, Tailscale, recognised by adapter name), *IPv6*, *Public (needs forwarded port)*, each with a Copy button |
+| **Steam invites** | Host writes its preferred address into the game's Steam lobby data; an invited friend's mod reads it and joins automatically |
 
-## Path selection (ICE-like)
+### Any of the host's addresses works
 
-The host and each joining client gather **candidates** and try them in parallel. The first one that
-completes a handshake wins; the rest are dropped.
+A Photon server tells clients where to go next: the NameServer returns the Master server address and the
+Master returns the Game server address. With a single configured "external address", a friend who
+reached the host through a *different* address (LAN vs WireGuard vs IPv6) would be sent to an
+address they cannot reach.
 
-| Priority | Candidate | When it works |
+The joining client avoids this with Photon's **public** `LoadBalancingClient.AddressRewriter` hook: since
+all three servers run on the host, the mod replaces the host part of every address the server returns with
+the address the player actually used, keeping the port. The host therefore never has to pick "the right"
+external address, and every friend can use whichever path works for them.
+
+### Layer 1c: automatic port forwarding
+
+If players have no shared network or VPN, the host's router must accept incoming connections. Many home
+routers allow a program to request this automatically (UPnP IGD / NAT-PMP / PCP). SemiLink asks for the
+server's UDP ports when hosting and removes the mapping when the session ends. No admin rights on the PC
+are needed; it works only if the router allows it and the host has a public IPv4 address (not CGNAT).
+
+## What players do in each situation
+
+| Situation | What works | Extra software |
 |---|---|---|
-| 1 | LAN address | Same local network |
-| 2 | IPv6 global address | Both players have IPv6 (no NAT at all) |
-| 3 | UPnP / NAT-PMP mapped port on the host's router | Router allows it (many home routers); no PC admin rights needed |
-| 4 | Public address observed by the Hub (hole punching) | Most home NATs ("cone" NATs) |
-| 5 | Third-party virtual LAN or manual address ("Direct") | User already has Radmin/ZeroTier/… or a forwarded port |
-| 6 | **Relay through the Hub** | Always, including symmetric NAT and CGNAT on both sides; latency depends on Hub location |
+| Same room or same home network | LAN discovery | None |
+| Already share a VPN (WireGuard, Radmin, ZeroTier, Tailscale, Hamachi) | LAN discovery or the VPN address from the hints | None from us |
+| Both have IPv6 | IPv6 address from the hints | None |
+| Host has a public IPv4 and the router supports UPnP | Automatic port forwarding, public address from the hints | None |
+| Host has a public IPv4, no UPnP | Manual port forwarding in the router; we document it | None |
+| None of the above (for example, CGNAT on both sides) | A VPN of their choice, a dedicated server, or **layer 2** if we build it | VPN, or nothing with layer 2 |
 
-The mod shows which path is active ("Direct", "Hole-punched", "Relayed via hub.example.org") and its
-round-trip time.
+The last row is the only case layer 1 does not cover on its own. Test reports record which row each
+session fell into, so we know whether layer 2 is worth building.
 
-## Session flow
+## Layer 2: built-in connection helper (future, only if needed)
+
+For players with no path at all, SemiLink can connect them itself, the way commercial games do (Steam
+Networking, Epic Online Services, WebRTC): a small coordination server introduces the players, they
+**punch holes** through their NATs and talk directly, and if that fails the traffic goes through a
+**relay**.
 
 ```mermaid
-sequenceDiagram
-    participant H as Host mod
-    participant HB as SemiLink Hub
-    participant F as Friend mod
-    H->>HB: Register session (candidates)
-    HB-->>H: Session code ABCD-1234 + observed public address
-    Note over H: Code shown in game, also written<br/>to Steam lobby data (hub + code)
-    F->>HB: Join ABCD-1234 (candidates)
-    HB-->>F: Host candidates + token
-    HB-->>H: Friend candidates + token
-    par Hole punching
-        H->>F: probe packets to each candidate
-        F->>H: probe packets to each candidate
+flowchart LR
+    subgraph C[Friend PC]
+        GC[Game] -- "UDP to 127.0.0.1" --> TC[SemiLink tunnel<br/>entrance]
     end
-    alt Direct path found
-        F->>H: Tunnel traffic (direct)
-    else No direct path
-        F->>HB: Tunnel traffic
-        HB->>H: relayed
+    subgraph H[Host PC]
+        TH[SemiLink tunnel<br/>exit] -- "UDP to 127.0.0.1" --> L[[Server]]
     end
+    TC == "direct (hole-punched) or relayed" ==> TH
+    HUB[(SemiLink Hub<br/>self-hostable)] -. introduces peers, relays if needed .- TC
+    HUB -.- TH
 ```
 
-### Steam invites
+Design notes, kept for when the decision is taken:
 
-The game links Steam lobbies to Photon rooms through lobby data keys (`RoomName`, `Region`,
-`BuildName`, `BuildBranch`, `HasPassword`). The host mod adds its own keys (Hub address and session
-code). When a friend accepts a Steam invite, their mod reads them and joins the tunnel **before** the game
-connects to Photon. Result: the normal in-game invite flow works with no codes typed.
+- **Same interface:** the game connects to `127.0.0.1`, the local tunnel entrance. Layer 1 stays unchanged.
+- **Datagram forwarding only:** Photon already has reliable UDP; the tunnel adds no reliability layer
+  and only a few bytes of header.
+- **SemiLink Hub:** self-hostable single binary / Docker image (C#, .NET 8). Session codes, address
+  reflection (STUN-like), hole-punch coordination, relay restricted to session members with bandwidth caps.
+- **Security:** the tunnel exit forwards only to the server's loopback ports; per-session tokens;
+  payload encryption so a relay cannot read or alter traffic.
+- **Alternatives to building it ourselves:** Steam Networking Sockets (already shipped with the game via
+  Facepunch.Steamworks; NAT traversal and Valve relays, no own infrastructure, but depends on Valve and its
+  relay locations); LiteNetLib NAT-punch helpers. Evaluate them before writing our own protocol.
+- **Wire protocol** documented in `docs/protocol.md` and versioned before implementation.
 
-## SemiLink Hub
-
-A small self-hostable service (single binary, Docker image). Responsibilities:
-
-| Function | Notes |
-|---|---|
-| Session registry | Short human-friendly codes, expire when the host leaves |
-| Signaling | Exchanges candidates and one-time tokens between host and clients |
-| Address reflection | Tells each peer its public IP:port as seen from the internet (STUN-like) |
-| Relay | Forwards tunnel datagrams when no direct path exists; only between members of one session, with per-session bandwidth caps |
-| Health | `/health` and basic metrics for self-hosters |
-
-It never sees game logic, only opaque datagrams and session metadata.
-
-**Who runs a Hub?** Anyone. The mod ships with a configurable list of hubs. Whether the project runs
-a public default hub (cost, abuse, jurisdiction) is an open decision; without one, groups use a hub run by
-one of their members, or rely on paths 1–5.
-
-A Hub on a VPS can run **next to LuxonServer**: that is the "dedicated server" package
-(`docker compose up -d` with both).
-
-## Security
-
-- The tunnel exit forwards only to LuxonServer's loopback ports; it is not a general-purpose VPN.
-- Session tokens are issued by the Hub per join; unauthenticated datagrams are dropped.
-- Relay only between members of the same session, with rate and bandwidth limits; no open relay.
-- Tunnel payload encryption (for example, AEAD with a key from the session handshake) is planned so
-  the relay cannot read or alter traffic; Photon traffic itself is not encrypted by default.
-
-## Implementation stack
-
-- **Tunnel**: C# inside the mod (plain `System.Net.Sockets` UDP), protocol code in a shared library.
-- **Hub**: C# on .NET 8, same shared protocol library, published as a single-file executable and a Docker image.
-- The wire protocol is documented in `docs/protocol.md` before implementation, and versioned.
-- Consider [LiteNetLib](https://github.com/RevenantX/LiteNetLib) (MIT) NAT-punch helpers vs our own minimal
-  implementation during the spike; do not add its reliability layer on top of Photon's.
-
-## Alternative considered: Steam Networking as transport
-
-The game already ships Facepunch.Steamworks 2.4.1, which exposes Valve's Steam Networking Sockets: P2P
-by Steam ID with NAT traversal and fallback through Valve's relay network (SDR), no own infrastructure.
-
-| | Own tunnel + Hub | Steam Networking |
-|---|---|---|
-| Own infrastructure needed | A Hub only for punching/relay | None |
-| Self-hostable, independent of third parties | ✅ | ❌ depends on Valve |
-| Relay location | Wherever you put the Hub | Valve's points of presence (may be far) |
-| Works only with a Steam account that owns the game | No (our policy still applies) | Yes |
-| Effort | Higher | Lower |
-
-It can be added later as an additional path behind the same tunnel interface. See ADR 0006.
-
-## Risks and how we check them
+## Risks
 
 | Risk | Mitigation |
 |---|---|
-| Symmetric NAT / CGNAT on both sides | Relay fallback; measure how often it happens in test reports |
-| Relay latency | Self-hosted Hub close to the group; multiple hubs in the list, pick by RTT |
-| LuxonServer cannot bind to loopback or change ports | Ask upstream; otherwise restrict with the tunnel exit and document firewall behaviour |
-| Photon timeouts during path switching | Establish the tunnel before the game connects; no path switching mid-session in v1 |
-| Two game instances on one PC (testing) | Configurable tunnel ports |
+| LAN discovery does not pass through some VPNs | Address hints and manual join always work |
+| Wrong address chosen by the player | Labelled hints, Steam invites carry the address automatically |
+| UPnP disabled or CGNAT | Clear message explaining the options in the table above |
+| Windows Firewall prompt on first Host | Expected for an incoming server; explain it on the Host screen |

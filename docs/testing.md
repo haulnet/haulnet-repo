@@ -7,15 +7,16 @@ checked **manually by at least two players on two PCs** with this checklist. Res
 ## Environment
 
 - [ ] Game version, SemiLink version, LuxonServer version recorded
-- [ ] Network: same LAN / different homes; ISP and router type; active tunnel path shown by the mod
-      (LAN, IPv6, UPnP, hole-punched, relayed, manual)
+- [ ] Network: same LAN / different homes; ISP and router type; connection path
+      (LAN, VPN and which one, IPv6, UPnP, manual port forwarding)
 - [ ] Host OS and client OS
 
 ## Core flow
 
 - [ ] Host mode starts the server; the address shown is reachable by the friend
-- [ ] Friend joins by address
-- [ ] Friend joins through a Steam invite (when phase 4 lands)
+- [ ] Friend joins by address (try a different host address than the first one shown, e.g. VPN vs LAN)
+- [ ] Friend sees the host in the LAN discovery list (same LAN; note whether it works over the VPN)
+- [ ] Friend joins through a Steam invite (from phase 3)
 - [ ] Lobby → truck → level → extraction → shop → next level
 - [ ] Voice chat both ways, including proximity
 - [ ] Item and enemy synchronisation looks normal (no desync, no rubber-banding beyond network latency)

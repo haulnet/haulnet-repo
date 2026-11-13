@@ -1,19 +1,21 @@
 # SemiLink
 
-**Play R.E.P.O. with friends through your own server instead of Photon Cloud.**
+**LAN and direct multiplayer for R.E.P.O., without Photon Cloud.**
 
-One player presses **Host**, friends join through a Steam invite or a session code, and the game runs on
-the host's PC, a home server or a VPS. SemiLink connects the players itself: no Radmin, Hamachi or other
-VPN programs, no admin rights, no Photon account, no `hosts` edits.
+R.E.P.O. has no local mode: even two players on the same network play through Photon's servers. SemiLink
+brings it back, like "Open to LAN" in Minecraft. One player presses **Host** and the server runs inside
+their game; friends join by address, from a LAN list or through a Steam invite. It works over the same LAN,
+any VPN you already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6, or a router port SemiLink opens via
+UPnP. No Photon account, no admin rights, no `hosts` edits.
 
 > [!WARNING]
 > **Pre-alpha: design phase.** Nothing is installable yet. See the [roadmap](docs/roadmap.md).
 
 ## Why
 
-R.E.P.O. routes all multiplayer traffic through Photon Cloud. If you are far from Photon's data centers,
-every packet between you and a friend in the same city travels to another country and back. SemiLink
-lets you put the server where it makes sense: on the host's PC, a home server, or a VPS near your group.
+All multiplayer traffic in R.E.P.O. goes through Photon Cloud. If you are far from Photon's data centers,
+every packet between you and a friend in the same city travels to another country and back. With SemiLink
+it goes straight to the host.
 
 Details and comparison with existing mods: [docs/why-semilink.md](docs/why-semilink.md).
 
@@ -23,29 +25,28 @@ Details and comparison with existing mods: [docs/why-semilink.md](docs/why-semil
 flowchart LR
     subgraph host[Host PC]
         GA[R.E.P.O. + SemiLink]
-        S[[Bundled server]]
+        S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + SemiLink] == "SemiLink tunnel:<br/>direct, hole-punched or relayed" ==> S
-    HUB[(SemiLink Hub<br/>self-hostable)] -.- GA
-    HUB -.- GB
+    GB[Friend<br/>R.E.P.O. + SemiLink] -- "host IP:port<br/>LAN, VPN, IPv6, forwarded port" --> S
 ```
 
 - **Client mod** (BepInEx): adds a *Cloud / Host / Join* switch. *Cloud* leaves the game untouched.
 - **Server:** [LuxonServer](https://github.com/niansa/LuxonServer), an open-source Photon-compatible
-  server, bundled with the mod, or run standalone or in Docker for an always-on server.
-- **Tunnel and Hub:** the mod carries game traffic between players over the best available path
-  (LAN, IPv6, UPnP, NAT hole punching, relay). The Hub that coordinates it is self-hostable.
+  server, bundled with the mod and started by the Host button. An always-on standalone or Docker server is
+  an optional extra for groups who want one.
+- **Connection:** a plain IP address, so any network path works. A built-in connection helper for players
+  with no path at all is designed and will be built if real-world data shows the need.
 
-More: [docs/architecture.md](docs/architecture.md).
+More: [docs/architecture.md](docs/architecture.md), [docs/connectivity.md](docs/connectivity.md).
 
 ## Planned features
 
-- [ ] Join a self-hosted server by address (phase 1)
-- [ ] One-click Host (phase 2)
-- [ ] Built-in tunnel with session codes, no VPN programs (phase 3)
-- [ ] Relay fallback and Steam invites (phase 4)
-- [ ] Docker images, standalone server, Thunderstore release (phase 5)
+- [ ] Join by address (phase 1)
+- [ ] One-click Host, LAN discovery, address hints (phase 2)
+- [ ] Steam invites, automatic port forwarding via UPnP, Thunderstore release (phase 3)
+- [ ] Decision on a built-in connection helper (phase 4)
+- [ ] Optional standalone and Docker server (phase 5)
 
 ## Requirements
 

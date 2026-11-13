@@ -14,7 +14,7 @@ body:
     attributes:
       label: Setup
       description: Number of players, network type, where the server ran
-      placeholder: "2 players, Radmin VPN, server on host PC"
+      placeholder: "2 players, WireGuard, server in host's game"
     validations:
       required: true
   - type: checkboxes
@@ -25,6 +25,7 @@ body:
         - label: Host starts the server and the shown address is reachable
         - label: Join by address
         - label: Join through Steam invite
+        - label: Host found in LAN discovery list
         - label: Full run (lobby → level → extraction → shop → next level)
         - label: Voice chat both ways
         - label: Leave and rejoin mid-session
@@ -34,7 +35,7 @@ body:
     attributes:
       label: Latency
       description: Ping through Photon Cloud vs SemiLink, if measured
-      placeholder: "Cloud ~120 ms, SemiLink ~25 ms"
+      placeholder: "Cloud ~120 ms, direct ~25 ms"
   - type: textarea
     id: notes
     attributes:
