@@ -31,6 +31,7 @@ public sealed class Plugin : BaseUnityPlugin
         try
         {
             PhotonRedirect.Apply(_harmony);
+            RegionPing.Apply(_harmony);
         }
         catch (Exception e)
         {

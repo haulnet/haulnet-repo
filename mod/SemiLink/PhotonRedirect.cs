@@ -34,6 +34,9 @@ internal static class PhotonRedirect
     private static ServerAddress _active;
     private static bool _isActive;
 
+    /// <summary>True when the current connection goes to a self-hosted server instead of Photon Cloud.</summary>
+    public static bool IsActive => _isActive;
+
     public static void Apply(Harmony harmony)
     {
         var setAppId = AccessTools.Method(typeof(DataDirector), nameof(DataDirector.PhotonSetAppId))
