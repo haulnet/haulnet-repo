@@ -40,7 +40,7 @@ flowchart LR
 |---|---|
 | **Host** | Starts the server inside the host's game and shows the addresses friends can use |
 | **Join by address** | Friend types `IP` or `IP:port` |
-| **LAN discovery** | Host announces the session on the local network (UDP broadcast/multicast); friends see it in a list and click it. Works on a LAN and on VPNs that pass broadcast |
+| **LAN discovery** | Host announces the session on the local network (UDP broadcast/multicast); friends see it in a list and click it. Works on a LAN and on VPNs that pass broadcast. Implemented as a UDP broadcast on port 47777 every 2 s (`SEMILINK|<protocol>|<name>`) |
 | **Address hints** | Host screen lists its addresses with labels: *LAN*, *VPN adapter* (WireGuard, Radmin, ZeroTier, Tailscale, recognised by adapter name), *IPv6*, *Public (needs forwarded port)*, each with a Copy button |
 | **Steam invites** | Host writes its preferred address into the game's Steam lobby data; an invited friend's mod reads it and joins automatically |
 

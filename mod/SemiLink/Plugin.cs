@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -10,10 +11,11 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "semilink.repo";
     public const string Name = "SemiLink";
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     internal static ManualLogSource Log { get; private set; } = null!;
     internal static SemiLinkConfig Settings { get; private set; } = null!;
+    internal static HostServer Server { get; private set; } = null!;
 
     private Harmony? _harmony;
 
@@ -21,6 +23,9 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Log = Logger;
         Settings = new SemiLinkConfig(Config);
+        Server = new HostServer(
+            Path.GetDirectoryName(Info.Location)!,
+            Path.Combine(Paths.CachePath, "SemiLink", "server"));
 
         _harmony = new Harmony(Guid);
         try
@@ -35,6 +40,7 @@ public sealed class Plugin : BaseUnityPlugin
             return;
         }
 
+        SemiLinkRunner.Create();
         Log.LogInfo($"{Name} {Version} loaded. {Settings.Describe()}");
     }
 }

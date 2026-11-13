@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>SemiLink</AssemblyName>
     <RootNamespace>SemiLink</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -33,7 +33,45 @@
     <Reference Include="Photon3Unity3D" HintPath="$(ManagedDir)\Photon3Unity3D.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)\UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ManagedDir)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="Facepunch.Steamworks.Win64" HintPath="$(ManagedDir)\Facepunch.Steamworks.Win64.dll" Private="false" />
   </ItemGroup>
+
+  <!--
+    Bundled server: a pinned LuxonServer release (BSD-3-Clause, see THIRD_PARTY_NOTICES.md), downloaded at
+    build time and verified by SHA-256. It is shipped in the mod package under server/ and never committed.
+  -->
+  <PropertyGroup>
+    <LuxonVersion>v1.5</LuxonVersion>
+    <LuxonAsset>luxon_server.msvc.release.exe</LuxonAsset>
+    <LuxonSha256>D5B272F49B21757D36094F30F986E4F4D2F1502EEC79BE33CE998EA19FFF3286</LuxonSha256>
+    <LuxonLicenseSha256>87CA0810C9A251D379CA432FDCDE1B8168E4F172A474B46A32BE2386E022E766</LuxonLicenseSha256>
+    <LuxonCacheDir>$(MSBuildThisFileDirectory)obj\luxon\$(LuxonVersion)\</LuxonCacheDir>
+  </PropertyGroup>
+
+  <Target Name="FetchLuxonServer" BeforeTargets="Build">
+    <DownloadFile Condition="!Exists('$(LuxonCacheDir)luxon_server.exe')"
+                  SourceUrl="https://github.com/niansa/LuxonServer/releases/download/$(LuxonVersion)/$(LuxonAsset)"
+                  DestinationFolder="$(LuxonCacheDir)" DestinationFileName="luxon_server.exe" />
+    <DownloadFile Condition="!Exists('$(LuxonCacheDir)LICENSE')"
+                  SourceUrl="https://raw.githubusercontent.com/niansa/LuxonServer/$(LuxonVersion)/LICENSE"
+                  DestinationFolder="$(LuxonCacheDir)" DestinationFileName="LICENSE" />
+    <GetFileHash Files="$(LuxonCacheDir)luxon_server.exe" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_LuxonHash" />
+    </GetFileHash>
+    <GetFileHash Files="$(LuxonCacheDir)LICENSE" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="_LuxonLicenseHash" />
+    </GetFileHash>
+    <Delete Condition="'$(_LuxonHash)' != '$(LuxonSha256)'" Files="$(LuxonCacheDir)luxon_server.exe" />
+    <Error Condition="'$(_LuxonHash)' != '$(LuxonSha256)'"
+           Text="LuxonServer download has an unexpected SHA-256 ($(_LuxonHash)); expected $(LuxonSha256). The file was deleted." />
+    <Delete Condition="'$(_LuxonLicenseHash)' != '$(LuxonLicenseSha256)'" Files="$(LuxonCacheDir)LICENSE" />
+    <Error Condition="'$(_LuxonLicenseHash)' != '$(LuxonLicenseSha256)'"
+           Text="LuxonServer LICENSE has an unexpected SHA-256 ($(_LuxonLicenseHash)); expected $(LuxonLicenseSha256)." />
+    <Copy SourceFiles="$(LuxonCacheDir)luxon_server.exe" DestinationFiles="$(OutDir)server\luxon_server.exe" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(LuxonCacheDir)LICENSE" DestinationFiles="$(OutDir)server\LuxonServer-LICENSE.txt" SkipUnchangedFiles="true" />
+  </Target>
 
   <Target Name="CheckGameDir" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="'$(GameDir)' == '' Or !Exists('$(ManagedDir)\Assembly-CSharp.dll')"
@@ -44,8 +82,10 @@
 
   <!-- Optional: copy the built plugin into the game for local testing (DeployToGame=true). -->
   <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
-    <MakeDir Directories="$(GameDir)\BepInEx\plugins\SemiLink" />
+    <MakeDir Directories="$(GameDir)\BepInEx\plugins\SemiLink\server" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\SemiLink" />
+    <Copy SourceFiles="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt"
+          DestinationFolder="$(GameDir)\BepInEx\plugins\SemiLink\server" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="SemiLink deployed to $(GameDir)\BepInEx\plugins\SemiLink" />
   </Target>
 

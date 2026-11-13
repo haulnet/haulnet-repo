@@ -20,3 +20,4 @@ Rules:
 | [0005](0005-no-piracy-features.md) | No features that target unlicensed copies | Accepted |
 | [0006](0006-layered-connectivity.md) | Layered connectivity: plain IP first, built-in helper later | Proposed |
 | [0007](0007-listen-server-first.md) | Listen server first; dedicated servers are optional | Accepted |
+| [0008](0008-built-in-imgui-panel.md) | In-game UI: a built-in IMGUI panel | Accepted |

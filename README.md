@@ -9,8 +9,8 @@ any VPN you already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6, or a rou
 UPnP. No Photon account, no admin rights, no `hosts` edits.
 
 > [!WARNING]
-> **Pre-alpha.** Join mode works in a single-PC test; there is no release yet and the Host button is not
-> implemented. Build from source: [mod/README.md](mod/README.md). See the [roadmap](docs/roadmap.md).
+> **Pre-alpha.** Host and Join work in single-PC tests; a two-player test and the first release are next.
+> Build from source: [mod/README.md](mod/README.md). See the [roadmap](docs/roadmap.md).
 
 ## Why
 
@@ -43,8 +43,8 @@ More: [docs/architecture.md](docs/architecture.md), [docs/connectivity.md](docs/
 
 ## Planned features
 
-- [ ] Join by address (phase 1)
-- [ ] One-click Host, LAN discovery, address hints (phase 2)
+- [x] Join by address (phase 1)
+- [x] One-click Host, LAN discovery, address hints (phase 2)
 - [ ] Steam invites, automatic port forwarding via UPnP, Thunderstore release (phase 3)
 - [ ] Decision on a built-in connection helper (phase 4)
 - [ ] Optional standalone and Docker server (phase 5)

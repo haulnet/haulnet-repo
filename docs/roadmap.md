@@ -32,6 +32,9 @@ Remaining: two-player test over LAN and a VPN, voice audio, CI build decision.
 
 ## Phase 2: One-click Host (MVP part 2)
 
+Status: **implemented in 0.2.0, verified on one PC** ([test report](test-reports/2026-11-14-phase2-host.md)).
+Remaining: two-player test; firewall prompts on a fresh PC.
+
 - Bundle the server binary and config template; server supervisor.
 - Address hints with labels and Copy; LAN discovery list.
 - SemiLink protocol version check.

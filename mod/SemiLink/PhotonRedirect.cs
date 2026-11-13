@@ -66,21 +66,42 @@ internal static class PhotonRedirect
         }
     }
 
-    /// <summary>Runs after the game has written Photon Cloud settings; replaces them in Join mode.</summary>
+    /// <summary>Runs after the game has written Photon Cloud settings; replaces them in Host and Join modes.</summary>
     private static void AfterPhotonSetAppId()
     {
         _isActive = false;
 
         var settings = Plugin.Settings;
-        if (settings.Mode != ConnectionMode.Join)
+        ServerAddress address;
+        switch (settings.Mode)
         {
-            return;
-        }
+            case ConnectionMode.Host:
+                // The server runs inside this game. Normally it is already up (started when Host was
+                // selected); if not, give it a moment rather than letting the connect fail.
+                var server = Plugin.Server;
+                if (server.State != ServerState.Running)
+                {
+                    server.Start();
+                    if (!server.WaitUntilReady(TimeSpan.FromSeconds(5)))
+                    {
+                        Plugin.Log.LogError($"Host mode: the server is not running ({server.Error}). The connection will fail; see the SemiLink panel (F8).");
+                    }
+                }
 
-        if (!ServerAddress.TryParse(settings.Address, out var address, out var error))
-        {
-            Plugin.Log.LogError($"Join mode is selected, but the address is invalid ({error}). Using Photon Cloud for this connection.");
-            return;
+                ServerAddress.TryParse("127.0.0.1", out address, out _);
+                break;
+
+            case ConnectionMode.Join:
+                if (!ServerAddress.TryParse(settings.Address, out address, out var error))
+                {
+                    Plugin.Log.LogError($"Join mode is selected, but the address is invalid ({error}). Using Photon Cloud for this connection.");
+                    return;
+                }
+
+                break;
+
+            default:
+                return;
         }
 
         var app = PhotonNetwork.PhotonServerSettings.AppSettings;
@@ -91,7 +112,7 @@ internal static class PhotonRedirect
 
         _active = address;
         _isActive = true;
-        Plugin.Log.LogInfo($"Join mode: connecting to {address} instead of Photon Cloud.");
+        Plugin.Log.LogInfo($"{settings.Mode} mode: connecting to {address} instead of Photon Cloud.");
     }
 
     /// <summary>Installs or removes the address rewriter right before a Photon client connects.</summary>
