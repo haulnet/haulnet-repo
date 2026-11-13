@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Issues about unlicensed copies of the game are closed without investigation.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Game version, SemiLink version, LuxonServer version (if you run it yourself)
+      placeholder: "Game v0.x.x, SemiLink 0.1.0, LuxonServer 1.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options: [Cloud, Host, Join, Standalone server, Docker server]
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options: [Same LAN, Radmin VPN, ZeroTier, Tailscale, Port forwarding, VPS, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Host presses Host
+        2. Friend enters address ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Attach BepInEx/LogOutput.log from the affected players (drag and drop the file)

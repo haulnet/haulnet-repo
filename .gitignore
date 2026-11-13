@@ -1,5 +1,21 @@
-mod/lib/
-mod/**/bin/
-mod/**/obj/
+# .NET build output
+bin/
+obj/
 *.user
 .vs/
+.idea/
+
+# Local game paths and references (never commit game assemblies)
+Directory.Build.user.props
+mod/lib/
+*.dll
+*.exe
+*.pdb
+
+# Packaging output
+dist/
+*.zip
+
+# OS
+Thumbs.db
+.DS_Store

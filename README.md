@@ -1,26 +1,67 @@
-# REPO LAN — мультиплеер R.E.P.O. без Photon Cloud
+# SemiLink
 
-Цель: играть в R.E.P.O. по сети без облака Photon. Сервер стоит у вас: на ПК хоста, на домашнем
-сервере или в Docker. Подключение идёт напрямую или через виртуальную локалку
-(Radmin VPN, ZeroTier, Tailscale, Hamachi). Пинг определяется маршрутом между игроками, а не путём через Европу.
+**Play R.E.P.O. with friends through your own server instead of Photon Cloud.**
 
-Главный приоритет: **установка без мучений**. Один мод у каждого игрока плюс сервер
-«в один клик» (exe или `docker compose up`).
+One player presses **Host**, friends join by address or Steam invite, and the game runs on the host's
+PC, a home server or a VPS. It works over Radmin VPN, ZeroTier, Tailscale, a LAN or a forwarded port.
+No Photon account, no `hosts` edits, no license workarounds.
 
-## База знаний
+> [!WARNING]
+> **Pre-alpha: design phase.** Nothing is installable yet. See the [roadmap](docs/roadmap.md).
 
-| Документ | О чём |
-|---|---|
-| [docs/01-research.md](docs/01-research.md) | Что уже существует: готовые серверы и моды, их плюсы и минусы |
-| [docs/02-architecture.md](docs/02-architecture.md) | Как это будет работать, диаграммы |
-| [docs/03-steam-and-legal.md](docs/03-steam-and-legal.md) | Steam, инвайты, лицензия и пиратские копии |
-| [docs/04-roadmap.md](docs/04-roadmap.md) | План работ по этапам |
-| [docs/05-open-questions.md](docs/05-open-questions.md) | Что ещё нужно проверить в коде игры |
+## Why
 
-## Коротко
+R.E.P.O. routes all multiplayer traffic through Photon Cloud. If you are far from Photon's data centers,
+every packet between you and a friend in the same city travels to another country and back. SemiLink
+lets you put the server where it makes sense: on the host's PC, a home server, or a VPS near your group.
 
-- Сервер писать с нуля **не нужно**. Уже есть открытый clean-room сервер
-  [LuxonServer](https://github.com/niansa/LuxonServer) (BSD-3), и в его списке совместимости
-  R.E.P.O. отмечена как «works flawlessly».
-- Наш проект собирает всё в удобный продукт: клиентский мод, который перенаправляет игру на ваш сервер
-  без правки `hosts`, кнопку «Хост», которая сама поднимает сервер, Docker-образ и понятную инструкцию.
+Details and comparison with existing mods: [docs/why-semilink.md](docs/why-semilink.md).
+
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph host[Host PC]
+        GA[R.E.P.O. + SemiLink]
+        S[[Bundled server]]
+        GA --> S
+    end
+    GB[Friend<br/>R.E.P.O. + SemiLink] -- Radmin / ZeroTier /<br/>Tailscale / LAN --> S
+```
+
+- **Client mod** (BepInEx): adds a *Cloud / Host / Join* switch. *Cloud* leaves the game untouched.
+- **Server:** [LuxonServer](https://github.com/niansa/LuxonServer), an open-source Photon-compatible
+  server, bundled with the mod, or run standalone or in Docker for an always-on server.
+
+More: [docs/architecture.md](docs/architecture.md).
+
+## Planned features
+
+- [ ] Join a self-hosted server by address (phase 1)
+- [ ] One-click Host with automatic address detection for Radmin VPN, ZeroTier and Tailscale (phase 2)
+- [ ] Standalone server and Docker image (phase 3)
+- [ ] Steam invites carry the server address (phase 4)
+- [ ] Thunderstore release (phase 4)
+
+## Requirements
+
+- A legal copy of R.E.P.O. on Steam. SemiLink does not support unlicensed copies.
+- BepInExPack for R.E.P.O.
+- Every player in the session installs SemiLink.
+
+## Documentation
+
+- [Project rules](AGENTS.md): read before contributing
+- [Documentation index](docs/README.md)
+- [Contributing](CONTRIBUTING.md)
+
+## Disclaimer
+
+SemiLink is an independent fan project. It is not affiliated with or endorsed by semiwork (developers of
+R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used
+only to describe compatibility.
+
+## License
+
+[MIT](LICENSE). Bundled third-party components keep their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
