@@ -6,6 +6,9 @@ Priorities: [ADR 0006](decisions/0006-layered-connectivity.md) (plain IP first) 
 
 ## Phase 0: Validate the hypothesis (manual, no code)
 
+Status: **merged into phase 1.** The mod's Join mode replaces the `hosts` redirect below; the
+remaining two-player checks are listed under phase 1.
+
 Goal: prove that LuxonServer runs R.E.P.O. for us, including voice.
 
 1. Host downloads the pinned LuxonServer release and sets its external address to the address the friend
@@ -18,6 +21,9 @@ Goal: prove that LuxonServer runs R.E.P.O. for us, including voice.
 Exit criteria: lobby, join, full run, voice and measured latency all OK, or upstream issues filed.
 
 ## Phase 1: Join by address (MVP part 1)
+
+Status: **implemented in 0.1.0, verified on one PC** ([test report](test-reports/2026-11-14-phase1-local.md)).
+Remaining: two-player test over LAN and a VPN, voice audio, CI build decision.
 
 - BepInEx plugin skeleton; build setup with a local `GameDir`; CI build decision (ADR 0002).
 - Redirect (postfix on `DataDirector.PhotonSetAppId()`) and `AddressRewriter`.

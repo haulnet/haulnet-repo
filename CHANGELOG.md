@@ -6,4 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing released yet.
+### Added
+
+- Join mode: connect R.E.P.O. to a self-hosted Photon-compatible server (a SemiLink host or a dedicated
+  LuxonServer) instead of Photon Cloud. Set `Mode = Join` and `Address` in
+  `BepInEx/config/semilink.repo.cfg`. Any of the server's addresses works (for example LAN or VPN), including
+  for voice chat.
+- Cloud mode (default) keeps the game's original Photon Cloud behaviour.

@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>SemiLink</AssemblyName>
+    <RootNamespace>SemiLink</RootNamespace>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>embedded</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!--
+    Game, Unity, Photon and BepInEx assemblies are referenced from the local game installation.
+    Set GameDir in mod/Directory.Build.user.props (see Directory.Build.user.props.example).
+    They are never copied to the output or committed.
+  -->
+  <PropertyGroup>
+    <ManagedDir>$(GameDir)\REPO_Data\Managed</ManagedDir>
+    <BepInExCoreDir>$(GameDir)\BepInEx\core</BepInExCoreDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExCoreDir)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(ManagedDir)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="PhotonRealtime" HintPath="$(ManagedDir)\PhotonRealtime.dll" Private="false" />
+    <Reference Include="PhotonUnityNetworking" HintPath="$(ManagedDir)\PhotonUnityNetworking.dll" Private="false" />
+    <Reference Include="Photon3Unity3D" HintPath="$(ManagedDir)\Photon3Unity3D.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(ManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CheckGameDir" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'$(GameDir)' == '' Or !Exists('$(ManagedDir)\Assembly-CSharp.dll')"
+           Text="GameDir is not set or does not point to an R.E.P.O. installation. Copy mod/Directory.Build.user.props.example to mod/Directory.Build.user.props and set GameDir." />
+    <Error Condition="!Exists('$(BepInExCoreDir)\BepInEx.dll')"
+           Text="BepInEx is not installed in GameDir ($(GameDir)). Install BepInEx 5 into the game first." />
+  </Target>
+
+  <!-- Optional: copy the built plugin into the game for local testing (DeployToGame=true). -->
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
+    <MakeDir Directories="$(GameDir)\BepInEx\plugins\SemiLink" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\SemiLink" />
+    <Message Importance="high" Text="SemiLink deployed to $(GameDir)\BepInEx\plugins\SemiLink" />
+  </Target>
+
+</Project>

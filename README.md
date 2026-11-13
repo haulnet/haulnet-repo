@@ -9,7 +9,8 @@ any VPN you already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6, or a rou
 UPnP. No Photon account, no admin rights, no `hosts` edits.
 
 > [!WARNING]
-> **Pre-alpha: design phase.** Nothing is installable yet. See the [roadmap](docs/roadmap.md).
+> **Pre-alpha.** Join mode works in a single-PC test; there is no release yet and the Host button is not
+> implemented. Build from source: [mod/README.md](mod/README.md). See the [roadmap](docs/roadmap.md).
 
 ## Why
 

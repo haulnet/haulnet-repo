@@ -12,11 +12,8 @@ Thanks for helping. Start with the [project rules](AGENTS.md): they apply to eve
 
 ## Development setup
 
-The mod project lands in phase 1; this section will describe it then. You will need:
-
-- a legal copy of R.E.P.O. with BepInExPack installed;
-- .NET SDK 8 or newer;
-- a `Directory.Build.user.props` (git-ignored) pointing `GameDir` at your game installation.
+See [mod/README.md](mod/README.md). In short: a legal copy of R.E.P.O. with BepInEx 5, .NET SDK 8 or
+newer, and a git-ignored `mod/Directory.Build.user.props` pointing `GameDir` at your game installation.
 
 ## Pull requests
 

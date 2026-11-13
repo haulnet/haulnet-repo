@@ -1,0 +1,5 @@
+<Project>
+  <!-- Machine-specific settings (GameDir, DeployToGame) live in the git-ignored Directory.Build.user.props. -->
+  <Import Project="$(MSBuildThisFileDirectory)Directory.Build.user.props"
+          Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.user.props')" />
+</Project>
