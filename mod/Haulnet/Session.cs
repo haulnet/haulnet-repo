@@ -95,6 +95,7 @@ internal static class Session
         ManualAddress = null;
         Current = ConnectionTarget.Cloud;
         _resolvedLobbyId = 0;
+        _unreachableHost = null;
         _resolvedTarget = null;
         HostAuthority.Reset();
         StopHosting();
@@ -156,7 +157,7 @@ internal static class Session
         else if (info.Addresses.Count == 0)
         {
             Plugin.Log.LogError("The host uses Haulnet but published no addresses.");
-            Popups.Schedule(Text.UnreachableHeader, Text.UnreachableBody);
+            _unreachableHost = OwnerName(lobby);
             target = ConnectionTarget.Cloud;
         }
         else
@@ -177,11 +178,12 @@ internal static class Session
             }
             else
             {
-                // No answer: the host may not answer probes (firewall) while the game port still works.
+                // No answer from any address: stop here with a clear message (see JoinGuard) instead of
+                // letting the game wait for a connection timeout and show a generic error.
                 chosen = info.Addresses[0];
                 label = Text.LabelUnverified;
-                Plugin.Log.LogWarning($"No host address answered the probe; trying {chosen.Address} anyway.");
-                Popups.Schedule(Text.UnreachableHeader, Text.UnreachableBody);
+                Plugin.Log.LogWarning("No host address answered the reachability probe; the join will be cancelled.");
+                _unreachableHost = OwnerName(lobby);
             }
 
             var text = chosen.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
@@ -194,6 +196,36 @@ internal static class Session
         _resolvedLobbyId = lobby.Id.Value;
         _resolvedTarget = target;
         return target;
+    }
+
+    private static string? _unreachableHost;
+
+    /// <summary>
+    /// True once after a join was resolved to a host that did not answer; returns the host's Steam name.
+    /// </summary>
+    public static bool TakeUnreachable(out string hostName)
+    {
+        hostName = _unreachableHost ?? "";
+        if (_unreachableHost == null)
+        {
+            return false;
+        }
+
+        _unreachableHost = null;
+        _resolvedTarget = null; // Try again on the next attempt.
+        return true;
+    }
+
+    private static string OwnerName(Steamworks.Data.Lobby lobby)
+    {
+        try
+        {
+            return lobby.Owner.Name ?? "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
     }
 
     private static void StopHosting()

@@ -42,9 +42,29 @@ internal static class Text
         $"The server on your PC could not start.\n\n{error}",
         $"Не удалось запустить сервер на твоём ПК.\n\n{error}");
     public static string UnreachableHeader => T("HAULNET: HOST NOT REACHABLE", "HAULNET: ХОСТ НЕДОСТУПЕН");
-    public static string UnreachableBody => T(
-        "Your game could not reach the host directly. Join the same local network or VPN as the host, or ask the host to allow Haulnet in Windows Firewall or forward UDP 27000-27002.",
-        "Не удалось достучаться до хоста напрямую. Подключись к той же локальной сети или VPN, что и хост, либо попроси хоста разрешить Haulnet в брандмауэре Windows или пробросить UDP 27000-27002.");
+    public static string UnreachableBody(string host) => T(
+        $"Could not reach {Name(host, "the host")}'s PC directly. Join the same local network or VPN (Radmin, WireGuard, Tailscale), or ask the host to allow R.E.P.O. and luxon_server in Windows Firewall, or to create the game in Photon Cloud.",
+        $"Не удалось достучаться до ПК {Name(host, "хоста")} напрямую. Подключитесь к одной локальной сети или VPN (Radmin, WireGuard, Tailscale), либо попроси хоста разрешить R.E.P.O. и luxon_server в брандмауэре Windows или создать игру в Photon Cloud.");
+
+    // Host: before hosting without any address reachable from outside
+    public static string LanOnlyHeader => T("ONLY YOUR HOME NETWORK?", "ТОЛЬКО ДОМАШНЯЯ СЕТЬ?");
+    public static string LanOnlyBody => T(
+        "Your PC has no VPN (Radmin, WireGuard, Tailscale) and no public address. Friends on your home network can join; friends elsewhere probably cannot. For them, create the game in Photon Cloud.",
+        "У твоего ПК нет VPN (Radmin, WireGuard, Tailscale) и внешнего адреса. Друзья из твоей домашней сети подключатся, остальные, скорее всего, нет. Для них создай игру в Photon Cloud.");
+
+    // Host: a friend did not make it in
+    public static string FriendFailedHeader => T("HAULNET: FRIEND NOT CONNECTED", "HAULNET: ДРУГ НЕ ПОДКЛЮЧИЛСЯ");
+    public static string FriendUnreachableBody(string friend) => T(
+        $"{Name(friend, "A friend")} could not reach your PC. Join the same VPN (Radmin, WireGuard, Tailscale), allow R.E.P.O. and luxon_server in Windows Firewall, or create the game in Photon Cloud.",
+        $"{Name(friend, "Друг")} не смог достучаться до твоего ПК. Подключитесь к одному VPN (Radmin, WireGuard, Tailscale), разреши R.E.P.O. и luxon_server в брандмауэре Windows или создай игру в Photon Cloud.");
+    public static string FriendLeftBody(string friend) => T(
+        $"{Name(friend, "A friend")} accepted the invite but left before joining. They may not have Haulnet installed, or cannot reach your PC.",
+        $"{Name(friend, "Друг")} принял приглашение, но вышел, не дойдя до игры. Возможно, у него нет Haulnet или он не может достучаться до твоего ПК.");
+    public static string FriendSlowBody(string friend, int seconds) => T(
+        $"{Name(friend, "A friend")} still has not joined after {seconds} seconds. They may not be able to reach your PC.",
+        $"{Name(friend, "Друг")} всё ещё не подключился за {seconds} секунд. Возможно, он не может достучаться до твоего ПК.");
+
+    private static string Name(string name, string fallback) => string.IsNullOrWhiteSpace(name) ? fallback : name;
     public static string Ok => "OK";
     public static string WrongPasswordHeader => T("WRONG PASSWORD", "НЕВЕРНЫЙ ПАРОЛЬ");
     public static string WrongPasswordBody => T(

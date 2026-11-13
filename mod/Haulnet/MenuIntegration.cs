@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Events;
@@ -84,26 +85,71 @@ internal static class MenuIntegration
 
     private static void Continue(MenuPageMain page, bool onMyPc)
     {
-        if (onMyPc)
+        if (!onMyPc)
         {
-            Session.ChooseOnMyPc();
-            if (Plugin.Server.State == ServerState.Failed)
-            {
-                Popups.ShowNow(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));
-                Session.ChooseCloud();
-                return;
-            }
-
-            if (OpenSavesDirectly())
-            {
-                return;
-            }
+            HostInCloud(page);
+            return;
         }
-        else
+
+        if (!HasAddressReachableFromOutside())
         {
+            // Only private LAN addresses: friends elsewhere most likely cannot connect. Say so before
+            // anyone tries, and offer Photon Cloud; a LAN party can still go ahead.
+            var popup = PopupTemplate();
+            popup.option1Event = new UnityEvent();
+            popup.option2Event = new UnityEvent();
+            popup.option1Event.AddListener(() => HostOnMyPc(page));
+            popup.option2Event.AddListener(() => HostInCloud(page));
+            MenuManager.instance.PagePopUpTwoOptions(
+                popup,
+                Text.LanOnlyHeader, null, Accent,
+                Text.LanOnlyBody, null,
+                Text.OptionMyPc, null,
+                Text.OptionCloud, null,
+                richText: false);
+            return;
+        }
+
+        HostOnMyPc(page);
+    }
+
+    private static bool HasAddressReachableFromOutside()
+    {
+        try
+        {
+            return NetworkAddresses.Collect().Any(h => h.Kind != AddressKind.Lan);
+        }
+        catch (Exception)
+        {
+            return true; // Unknown: do not nag.
+        }
+    }
+
+    private static void HostOnMyPc(MenuPageMain page)
+    {
+        Session.ChooseOnMyPc();
+        if (Plugin.Server.State == ServerState.Failed)
+        {
+            Popups.ShowNow(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));
             Session.ChooseCloud();
+            return;
         }
 
+        if (!OpenSavesDirectly())
+        {
+            RunGameHostFlow(page);
+        }
+    }
+
+    private static void HostInCloud(MenuPageMain page)
+    {
+        Session.ChooseCloud();
+        RunGameHostFlow(page);
+    }
+
+    /// <summary>Continues the game's own "host game" flow (region page) without asking again.</summary>
+    private static void RunGameHostFlow(MenuPageMain page)
+    {
         _bypassHostChoice = true;
         try
         {

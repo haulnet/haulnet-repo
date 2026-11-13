@@ -48,6 +48,7 @@ public sealed class Plugin : BaseUnityPlugin
 
         var runner = HaulnetRunner.Create();
         HostAuthority.Apply(_harmony, runner.gameObject);
+        JoinGuard.Apply(_harmony, runner.gameObject);
         Log.LogInfo($"{Name} {Version} loaded.");
     }
 }

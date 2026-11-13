@@ -48,6 +48,11 @@ Your last answer is offered first next time.
 addresses; Haulnet checks which one answers (LAN, VPN, IPv6, internet) and connects there. The lobby shows
 which address is used. After leaving, everything is back to normal.
 
+Friends outside your home network can reach your PC only through a VPN you share (Radmin, WireGuard,
+Tailscale), a public address with forwarded ports, or IPv6. If your PC has none of these, Haulnet warns you
+before hosting. If a friend still cannot reach you, their join stops at once with a message, and you are
+told who could not connect.
+
 **Dedicated server (advanced):** press **F8** in the main menu, enter the server address and press *Use*;
 the next *Public game* goes to that server.
 
