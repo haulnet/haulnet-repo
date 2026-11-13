@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace SemiLink;
+namespace Haulnet;
 
 internal enum AddressKind
 {

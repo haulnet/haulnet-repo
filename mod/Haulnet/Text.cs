@@ -1,11 +1,11 @@
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>
 /// Player-facing strings. English is the source language; translations will hook in here.
 /// </summary>
 internal static class Text
 {
-    public const string Title = "SemiLink";
+    public const string Title = "Haulnet";
     public const string ToggleHint = "F8";
 
     public const string ModeCloud = "Cloud";
@@ -32,7 +32,7 @@ internal static class Text
     public const string LanGames = "Games on your local network:";
     public const string LanNone = "None found yet. Host must be in Host mode on the same network.";
     public const string Use = "Use";
-    public const string Incompatible = "(different SemiLink version)";
+    public const string Incompatible = "(different Haulnet version)";
 
     public const string LockedInRoom = "Leave the lobby to change the mode.";
 }

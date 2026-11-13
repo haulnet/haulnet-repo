@@ -4,7 +4,7 @@ using HarmonyLib;
 using Photon.Pun;
 using Photon.Realtime;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>
 /// Points the game's Photon connection at the server chosen by the player instead of Photon Cloud.
@@ -87,7 +87,7 @@ internal static class PhotonRedirect
                     server.Start();
                     if (!server.WaitUntilReady(TimeSpan.FromSeconds(5)))
                     {
-                        Plugin.Log.LogError($"Host mode: the server is not running ({server.Error}). The connection will fail; see the SemiLink panel (F8).");
+                        Plugin.Log.LogError($"Host mode: the server is not running ({server.Error}). The connection will fail; see the Haulnet panel (F8).");
                     }
                 }
 

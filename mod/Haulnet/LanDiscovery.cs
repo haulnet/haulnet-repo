@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>A host found on the local network.</summary>
 internal sealed class DiscoveredHost
@@ -28,15 +28,15 @@ internal sealed class DiscoveredHost
 /// LAN discovery: a host broadcasts a small UDP announcement every few seconds; joining players listen
 /// and list the hosts they hear. Runs on the main thread from <see cref="Tick"/>, no background threads.
 /// </summary>
-/// <remarks>Announcement: <c>SEMILINK|&lt;protocol&gt;|&lt;name&gt;</c>, UTF-8, on UDP port <see cref="Port"/>.</remarks>
+/// <remarks>Announcement: <c>HAULNET|&lt;protocol&gt;|&lt;name&gt;</c>, UTF-8, on UDP port <see cref="Port"/>.</remarks>
 internal sealed class LanDiscovery : IDisposable
 {
-    /// <summary>SemiLink host/client compatibility version. Bump when hosts and clients stop being compatible.</summary>
+    /// <summary>Haulnet host/client compatibility version. Bump when hosts and clients stop being compatible.</summary>
     public const int ProtocolVersion = 1;
 
     public const int Port = 47777;
 
-    private const string Magic = "SEMILINK";
+    private const string Magic = "HAULNET";
     private static readonly TimeSpan AnnounceInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan HostTimeout = TimeSpan.FromSeconds(7);
 

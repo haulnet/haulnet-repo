@@ -4,17 +4,17 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 
-namespace SemiLink;
+namespace Haulnet;
 
 [BepInPlugin(Guid, Name, Version)]
 public sealed class Plugin : BaseUnityPlugin
 {
-    public const string Guid = "semilink.repo";
-    public const string Name = "SemiLink";
+    public const string Guid = "haulnet.repo";
+    public const string Name = "Haulnet";
     public const string Version = "0.2.0";
 
     internal static ManualLogSource Log { get; private set; } = null!;
-    internal static SemiLinkConfig Settings { get; private set; } = null!;
+    internal static HaulnetConfig Settings { get; private set; } = null!;
     internal static HostServer Server { get; private set; } = null!;
 
     private Harmony? _harmony;
@@ -22,10 +22,10 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Log = Logger;
-        Settings = new SemiLinkConfig(Config);
+        Settings = new HaulnetConfig(Config);
         Server = new HostServer(
             Path.GetDirectoryName(Info.Location)!,
-            Path.Combine(Paths.CachePath, "SemiLink", "server"));
+            Path.Combine(Paths.CachePath, "Haulnet", "server"));
 
         _harmony = new Harmony(Guid);
         try
@@ -36,12 +36,12 @@ public sealed class Plugin : BaseUnityPlugin
         catch (Exception e)
         {
             // Fail safe: without our patches the game keeps using Photon Cloud exactly as unmodded.
-            Log.LogError($"Could not install patches, SemiLink is inactive and the game uses Photon Cloud: {e}");
+            Log.LogError($"Could not install patches, Haulnet is inactive and the game uses Photon Cloud: {e}");
             _harmony.UnpatchSelf();
             return;
         }
 
-        SemiLinkRunner.Create();
+        HaulnetRunner.Create();
         Log.LogInfo($"{Name} {Version} loaded. {Settings.Describe()}");
     }
 }

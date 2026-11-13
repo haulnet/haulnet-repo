@@ -2,7 +2,7 @@ using System;
 using HarmonyLib;
 using Photon.Pun;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>
 /// Shows the real round-trip time to the self-hosted server on the game's region page.

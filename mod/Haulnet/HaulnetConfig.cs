@@ -1,7 +1,7 @@
 using System;
 using BepInEx.Configuration;
 
-namespace SemiLink;
+namespace Haulnet;
 
 public enum ConnectionMode
 {
@@ -11,21 +11,21 @@ public enum ConnectionMode
     /// <summary>Run the server inside this game; friends join this PC.</summary>
     Host,
 
-    /// <summary>Connect to a SemiLink host or a dedicated server at <see cref="SemiLinkConfig.Address"/>.</summary>
+    /// <summary>Connect to a Haulnet host or a dedicated server at <see cref="HaulnetConfig.Address"/>.</summary>
     Join,
 }
 
 /// <summary>
-/// Player settings, stored in BepInEx/config/semilink.repo.cfg.
+/// Player settings, stored in BepInEx/config/haulnet.repo.cfg.
 /// Read on every connect, so changes made in game, in the file or by a config manager apply to the next connection.
 /// </summary>
-internal sealed class SemiLinkConfig
+internal sealed class HaulnetConfig
 {
     private readonly ConfigEntry<ConnectionMode> _mode;
     private readonly ConfigEntry<string> _address;
     private readonly ConfigEntry<bool> _lanDiscovery;
 
-    public SemiLinkConfig(ConfigFile config)
+    public HaulnetConfig(ConfigFile config)
     {
         _mode = config.Bind(
             "Connection",
@@ -33,7 +33,7 @@ internal sealed class SemiLinkConfig
             ConnectionMode.Cloud,
             "Cloud: play through Photon Cloud, as without the mod.\n" +
             "Host: run the server inside your game; friends join your PC.\n" +
-            "Join: connect to the server at Address (a SemiLink host or a dedicated LuxonServer).");
+            "Join: connect to the server at Address (a Haulnet host or a dedicated LuxonServer).");
 
         _address = config.Bind(
             "Connection",

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- Folder that contains REPO.exe, with BepInEx 5 installed. -->
     <GameDir>C:\Program Files (x86)\Steam\steamapps\common\REPO</GameDir>
-    <!-- Copy the built plugin into GameDir\BepInEx\plugins\SemiLink after every build. -->
+    <!-- Copy the built plugin into GameDir\BepInEx\plugins\Haulnet after every build. -->
     <DeployToGame>true</DeployToGame>
   </PropertyGroup>
 </Project>

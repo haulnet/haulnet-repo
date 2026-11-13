@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>
-/// Per-frame part of SemiLink: keeps the host server and LAN discovery in line with the selected mode and
+/// Per-frame part of Haulnet: keeps the host server and LAN discovery in line with the selected mode and
 /// draws the in-game panel (IMGUI, menus only). Lives on its own hidden, persistent GameObject.
 /// </summary>
-internal sealed class SemiLinkRunner : MonoBehaviour
+internal sealed class HaulnetRunner : MonoBehaviour
 {
     private const float BaseHeight = 1080f;
     private static readonly TimeSpan AddressRefresh = TimeSpan.FromSeconds(5);
@@ -24,11 +24,11 @@ internal sealed class SemiLinkRunner : MonoBehaviour
     private ConnectionMode _appliedMode = (ConnectionMode)(-1);
     private GUIStyle? _wrap;
 
-    public static SemiLinkRunner Create()
+    public static HaulnetRunner Create()
     {
-        var go = new GameObject("SemiLink") { hideFlags = HideFlags.HideAndDontSave };
+        var go = new GameObject("Haulnet") { hideFlags = HideFlags.HideAndDontSave };
         DontDestroyOnLoad(go);
-        return go.AddComponent<SemiLinkRunner>();
+        return go.AddComponent<HaulnetRunner>();
     }
 
     private void Start()

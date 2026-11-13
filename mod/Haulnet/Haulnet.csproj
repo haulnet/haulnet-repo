@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>SemiLink</AssemblyName>
-    <RootNamespace>SemiLink</RootNamespace>
+    <AssemblyName>Haulnet</AssemblyName>
+    <RootNamespace>Haulnet</RootNamespace>
     <Version>0.2.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -82,11 +82,11 @@
 
   <!-- Optional: copy the built plugin into the game for local testing (DeployToGame=true). -->
   <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
-    <MakeDir Directories="$(GameDir)\BepInEx\plugins\SemiLink\server" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\SemiLink" />
+    <MakeDir Directories="$(GameDir)\BepInEx\plugins\Haulnet\server" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\Haulnet" />
     <Copy SourceFiles="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt"
-          DestinationFolder="$(GameDir)\BepInEx\plugins\SemiLink\server" SkipUnchangedFiles="true" />
-    <Message Importance="high" Text="SemiLink deployed to $(GameDir)\BepInEx\plugins\SemiLink" />
+          DestinationFolder="$(GameDir)\BepInEx\plugins\Haulnet\server" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Haulnet deployed to $(GameDir)\BepInEx\plugins\Haulnet" />
   </Target>
 
 </Project>

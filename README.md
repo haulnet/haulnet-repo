@@ -1,9 +1,9 @@
-# SemiLink
+# Haulnet
 
 **LAN and direct multiplayer for R.E.P.O., without Photon Cloud.**
 
 R.E.P.O. has no local mode: even two players on the same network play through Photon's servers, and
-players far from Photon's data centers get high ping. SemiLink brings local play back, like "Open to LAN"
+players far from Photon's data centers get high ping. Haulnet brings local play back, like "Open to LAN"
 in Minecraft. One player presses **Host** and a server runs inside their game; friends connect straight
 to the host over the same LAN, any VPN they already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6,
 or a forwarded port. No Photon account, no admin rights, no `hosts` edits.
@@ -17,11 +17,11 @@ or a forwarded port. No Photon account, no admin rights, no `hosts` edits.
 ```mermaid
 flowchart LR
     subgraph host[Host PC]
-        GA[R.E.P.O. + SemiLink]
+        GA[R.E.P.O. + Haulnet]
         S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + SemiLink] -- "host IP<br/>LAN, VPN, IPv6, forwarded port" --> S
+    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, VPN, IPv6, forwarded port" --> S
 ```
 
 - The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
@@ -32,7 +32,7 @@ flowchart LR
 
 ## Usage
 
-Every player installs the mod. In the game menu, the **SemiLink** bar is in the top-right corner; click it
+Every player installs the mod. In the game menu, the **Haulnet** bar is in the top-right corner; click it
 or press **F8**.
 
 | Mode | What it does |
@@ -45,7 +45,7 @@ Network: the server uses **UDP 27000-27002**; LAN discovery uses **UDP 47777**. 
 `luxon_server` or R.E.P.O. may use the network, allow it, or friends cannot connect. When playing over the
 internet without a VPN, the host must forward UDP 27000-27002 on their router.
 
-All players need the same game version and the same SemiLink version.
+All players need the same game version and the same Haulnet version.
 
 ## Building from source
 
@@ -58,18 +58,18 @@ for the first build.
 2. Build:
 
    ```bash
-   dotnet build mod/SemiLink.sln -c Release
+   dotnet build mod/Haulnet.sln -c Release
    ```
 
    The build downloads the pinned LuxonServer release, verifies its SHA-256 and puts it under `server/` next
    to the plugin. With `DeployToGame` set to `true`, the result is copied to
-   `<GameDir>/BepInEx/plugins/SemiLink`.
+   `<GameDir>/BepInEx/plugins/Haulnet`.
 
 Game, Photon and BepInEx assemblies are referenced from your installation and never included in this
 repository.
 
-Settings are stored in `BepInEx/config/semilink.repo.cfg`. To remove the mod, delete
-`BepInEx/plugins/SemiLink`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
+Settings are stored in `BepInEx/config/haulnet.repo.cfg`. To remove the mod, delete
+`BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
 `doorstop_config.ini` and `.doorstop_version` from the game folder.
 
 ## Planned
@@ -82,11 +82,11 @@ Settings are stored in `BepInEx/config/semilink.repo.cfg`. To remove the mod, de
 
 ## Not supported
 
-Unlicensed copies of the game. SemiLink is for people who own R.E.P.O. on Steam.
+Unlicensed copies of the game. Haulnet is for people who own R.E.P.O. on Steam.
 
 ## Disclaimer
 
-SemiLink is an independent fan project. It is not affiliated with or endorsed by semiwork (developers of
+Haulnet is an independent fan project. It is not affiliated with or endorsed by semiwork (developers of
 R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used
 only to describe compatibility.
 

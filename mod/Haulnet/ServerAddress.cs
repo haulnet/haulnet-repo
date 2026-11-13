@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>A host with an optional port, as typed by the player.</summary>
 internal readonly struct ServerAddress

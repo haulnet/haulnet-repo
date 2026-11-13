@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace SemiLink;
+namespace Haulnet;
 
 /// <summary>
 /// Windows job object with "kill on close": child processes assigned to it are terminated by Windows when
