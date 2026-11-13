@@ -1,38 +1,35 @@
 using System;
-using System.Linq;
 using HarmonyLib;
+using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Haulnet;
 
 /// <summary>
-/// Haulnet inside the game's own menus (game code hooks, all optional):
+/// Haulnet inside the game's own menus besides the region page (game code hooks, all optional):
 /// <list type="bullet">
-/// <item><c>MenuPageMain.ButtonEventHostGame</c>: "Where to host?" popup before the region page;</item>
 /// <item><c>MenuPageMain.Start</c>: the main menu opened, reset the session;</item>
-/// <item><c>SteamLobbyManager.SetLobbyData</c>: publish the host's addresses in the Steam lobby;</item>
-/// <item><c>MenuPageLobby.Start</c>: a status line in the lobby.</item>
+/// <item><c>SteamLobbyManager.SetLobbyData</c>: publish where the game lives in the Steam lobby;</item>
+/// <item><c>MenuPageLobby.Start</c> / <c>UpdateChatPrompt</c>: a status line in the lobby, remember the server;</item>
+/// <item><c>NetworkConnect.OnDisconnected</c>: a Haulnet explanation instead of "Disconnected: ExceptionOnConnect".</item>
 /// </list>
-/// If a hook is missing after a game update, that feature is skipped and logged; the F8 panel still works.
+/// If a hook is missing after a game update, that feature is skipped and logged.
 /// </summary>
 internal static class MenuIntegration
 {
-    private static readonly Color Accent = new(1f, 0.55f, 0f);
-
     // Zero-width marker so the status line is appended once per prompt text.
     private const string StatusMarker = "​";
 
-    private static bool _bypassHostChoice;
-    private static MenuButtonPopUp? _popupTemplate;
+    private static bool _incompatibilityShown;
 
     public static void Apply(Harmony harmony)
     {
-        TryPatch(harmony, typeof(MenuPageMain), nameof(MenuPageMain.ButtonEventHostGame), prefix: nameof(BeforeHostGame));
         TryPatch(harmony, typeof(MenuPageMain), "Start", postfix: nameof(AfterMainMenuStart));
         TryPatch(harmony, typeof(SteamLobbyManager), nameof(SteamLobbyManager.SetLobbyData), postfix: nameof(AfterSetLobbyData));
         TryPatch(harmony, typeof(MenuPageLobby), "Start", postfix: nameof(AfterLobbyStart));
         TryPatch(harmony, typeof(MenuPageLobby), nameof(MenuPageLobby.UpdateChatPrompt), postfix: nameof(AfterUpdateChatPrompt));
+        TryPatch(harmony, typeof(NetworkConnect), nameof(NetworkConnect.OnDisconnected), prefix: nameof(BeforeConnectDisconnected), postfix: nameof(AfterConnectDisconnected));
     }
 
     private static void TryPatch(Harmony harmony, Type type, string method, string? prefix = null, string? postfix = null)
@@ -50,159 +47,14 @@ internal static class MenuIntegration
             postfix: postfix != null ? new HarmonyMethod(typeof(MenuIntegration), postfix) : null);
     }
 
-    /// <summary>"Private game" was confirmed: ask where to host before the region page opens.</summary>
-    private static bool BeforeHostGame(MenuPageMain __instance)
-    {
-        if (_bypassHostChoice)
-        {
-            return true;
-        }
-
-        try
-        {
-            var popup = PopupTemplate();
-            var myPcFirst = Plugin.Settings.LastChoiceOnMyPc;
-            popup.option1Event = new UnityEvent();
-            popup.option2Event = new UnityEvent();
-            popup.option1Event.AddListener(() => Continue(__instance, myPcFirst));
-            popup.option2Event.AddListener(() => Continue(__instance, !myPcFirst));
-
-            MenuManager.instance.PagePopUpTwoOptions(
-                popup,
-                Text.WhereHeader, null, Accent,
-                Text.WhereBody, null,
-                myPcFirst ? Text.OptionMyPc : Text.OptionCloud, null,
-                myPcFirst ? Text.OptionCloud : Text.OptionMyPc, null,
-                richText: false);
-            return false;
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.LogError($"Could not show the hosting choice, continuing with Photon Cloud: {e}");
-            return true;
-        }
-    }
-
-    private static void Continue(MenuPageMain page, bool onMyPc)
-    {
-        if (!onMyPc)
-        {
-            HostInCloud(page);
-            return;
-        }
-
-        if (!HasAddressReachableFromOutside())
-        {
-            // Only private LAN addresses: friends elsewhere most likely cannot connect. Say so before
-            // anyone tries, and offer Photon Cloud; a LAN party can still go ahead.
-            var popup = PopupTemplate();
-            popup.option1Event = new UnityEvent();
-            popup.option2Event = new UnityEvent();
-            popup.option1Event.AddListener(() => HostOnMyPc(page));
-            popup.option2Event.AddListener(() => HostInCloud(page));
-            MenuManager.instance.PagePopUpTwoOptions(
-                popup,
-                Text.LanOnlyHeader, null, Accent,
-                Text.LanOnlyBody, null,
-                Text.OptionMyPc, null,
-                Text.OptionCloud, null,
-                richText: false);
-            return;
-        }
-
-        HostOnMyPc(page);
-    }
-
-    private static bool HasAddressReachableFromOutside()
-    {
-        try
-        {
-            return NetworkAddresses.Collect().Any(h => h.Kind != AddressKind.Lan);
-        }
-        catch (Exception)
-        {
-            return true; // Unknown: do not nag.
-        }
-    }
-
-    private static void HostOnMyPc(MenuPageMain page)
-    {
-        Session.ChooseOnMyPc();
-        if (Plugin.Server.State == ServerState.Failed)
-        {
-            Popups.ShowNow(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));
-            Session.ChooseCloud();
-            return;
-        }
-
-        if (!OpenSavesDirectly())
-        {
-            RunGameHostFlow(page);
-        }
-    }
-
-    private static void HostInCloud(MenuPageMain page)
-    {
-        Session.ChooseCloud();
-        RunGameHostFlow(page);
-    }
-
-    /// <summary>Continues the game's own "host game" flow (region page) without asking again.</summary>
-    private static void RunGameHostFlow(MenuPageMain page)
-    {
-        _bypassHostChoice = true;
-        try
-        {
-            page.ButtonEventHostGame();
-        }
-        finally
-        {
-            _bypassHostChoice = false;
-        }
-    }
-
-    /// <summary>
-    /// Hosting on this PC: skip the region page. There is one server, the host's own PC, so choosing a region
-    /// is an empty step. Does what <c>MenuPageRegions.PickRegion</c> does for a hosted game: set the region
-    /// and open the save page. <c>NetworkConnect</c> applies region, version and server before connecting.
-    /// Returns false (and the region page opens as usual) if the game code changed.
-    /// </summary>
-    private static bool OpenSavesDirectly()
-    {
-        try
-        {
-            NetworkRegion(DataDirector.instance) = HostServer.RegionCode;
-            SemiFunc.MainMenuSetMultiplayer();
-            MenuManager.instance.PageCloseAll();
-            MenuManager.instance.PageOpen(MenuPageIndex.Saves);
-            return true;
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.LogWarning($"Could not skip the region page, showing it instead: {e.Message}");
-            return false;
-        }
-    }
-
-    // DataDirector.networkRegion is internal in the game.
-    private static readonly AccessTools.FieldRef<DataDirector, string> NetworkRegion =
-        AccessTools.FieldRefAccess<DataDirector, string>("networkRegion");
-
-    private static MenuButtonPopUp PopupTemplate()
-    {
-        if (_popupTemplate == null)
-        {
-            var go = new GameObject("Haulnet.PopupTemplate") { hideFlags = HideFlags.HideAndDontSave };
-            UnityEngine.Object.DontDestroyOnLoad(go);
-            _popupTemplate = go.AddComponent<MenuButtonPopUp>();
-        }
-
-        return _popupTemplate;
-    }
-
     private static void AfterMainMenuStart()
     {
         Session.Reset();
+        if (!WherePage.Available && !_incompatibilityShown)
+        {
+            _incompatibilityShown = true;
+            Popups.Schedule(Text.IncompatibleHeader, Text.IncompatibleBody);
+        }
     }
 
     /// <summary>The game wrote its lobby data (room name, region, version); add or remove ours.</summary>
@@ -210,13 +62,19 @@ internal static class MenuIntegration
     {
         try
         {
-            if (Session.HostingOnMyPc)
+            var lobby = LobbyData.CurrentLobby();
+            var target = Session.Current;
+            switch (target.Kind)
             {
-                LobbyData.Write(LobbyData.CurrentLobby(), NetworkAddresses.Collect());
-            }
-            else
-            {
-                LobbyData.Clear(LobbyData.CurrentLobby());
+                case TargetKind.Host:
+                    LobbyData.WriteHost(lobby, NetworkAddresses.Collect(), Plugin.Server.BasePort);
+                    break;
+                case TargetKind.Server:
+                    LobbyData.WriteServer(lobby, target.Address);
+                    break;
+                default:
+                    LobbyData.Clear(lobby);
+                    break;
             }
         }
         catch (Exception e)
@@ -225,16 +83,31 @@ internal static class MenuIntegration
         }
     }
 
-    /// <summary>The lobby page opened: the connection worked. Show where it goes.</summary>
+    /// <summary>The lobby page opened: the connection worked. Show where it goes and remember the server.</summary>
     private static void AfterLobbyStart(MenuPageLobby __instance)
     {
-        // The connection succeeded, so a "host not reachable" warning from the probe is moot.
+        var target = Session.Current;
+        if (target.Kind == TargetKind.Cloud)
+        {
+            return;
+        }
+
         try
         {
-            MenuManager.instance?.PagePopUpScheduledReset();
+            if (target.Kind == TargetKind.Server)
+            {
+                KnownServers.AddRecent(target.Address, target.Label);
+            }
+
+            // The game shows "<Photon region> <room>"; a Haulnet server's region code means nothing.
+            if (__instance.roomNameText != null)
+            {
+                __instance.roomNameText.text = "Haulnet " + PhotonNetwork.CurrentRoom?.Name;
+            }
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Plugin.Log.LogWarning($"Could not update the lobby header: {e.Message}");
         }
 
         AppendStatus(__instance);
@@ -258,7 +131,7 @@ internal static class MenuIntegration
                 return;
             }
 
-            prompt.text += $"\n<size=80%><color=#FF8C00>{StatusMarker}{status}</color></size>";
+            prompt.text += $"\n<size=80%><color=#FF8C00>{StatusMarker}{Escape(status)}</color></size>";
         }
         catch (Exception e)
         {
@@ -271,10 +144,68 @@ internal static class MenuIntegration
         var target = Session.Current;
         return target.Kind switch
         {
-            TargetKind.Host => Text.StatusHosting,
-            TargetKind.Remote when target.Label.Length > 0 => Text.StatusJoined(target.Address.ToString(), target.Label),
-            TargetKind.Remote => Text.StatusManual(target.Address.ToString()),
+            TargetKind.Host => Text.StatusHosting(Plugin.Server.BasePort),
+            TargetKind.Server => Text.StatusServer(target.Label.Length > 0 ? $"{target.Label} ({target.Address.Display})" : target.Address.Display),
+            TargetKind.FriendPc => Text.StatusFriendPc(target.Address.ToString()),
             _ => null,
         };
+    }
+
+    // The prompt is rich text; server names come from the network.
+    private static string Escape(string text) => text.Replace("<", "‹").Replace(">", "›");
+
+    // ---------- Connection failures ----------
+
+    private static bool _failureHandled;
+
+    /// <summary>
+    /// <c>NetworkConnect.OnDisconnected</c> (game code) shows "Disconnected / Cause: ..." and leaves to the main
+    /// menu when connecting fails before the game has a NetworkManager. For Haulnet targets that cause
+    /// (ExceptionOnConnect, timeout) says nothing to the player; replace it with what to check. Before the game
+    /// leaves the Steam lobby, a friend who could not reach the host's PC tells the host.
+    /// </summary>
+    private static void BeforeConnectDisconnected(DisconnectCause _cause)
+    {
+        _failureHandled = false;
+        if (NetworkManager.instance || _cause is DisconnectCause.DisconnectByClientLogic or DisconnectCause.DisconnectByServerLogic)
+        {
+            return;
+        }
+
+        var target = Session.Current;
+        if (target.Kind == TargetKind.Cloud)
+        {
+            return;
+        }
+
+        _failureHandled = true;
+        Plugin.Log.LogWarning($"Connection to {target.Kind} {target.Address} failed: {_cause}.");
+        if (target.Kind == TargetKind.FriendPc)
+        {
+            JoinGuard.TellHostUnreachable();
+        }
+    }
+
+    private static void AfterConnectDisconnected()
+    {
+        if (!_failureHandled)
+        {
+            return;
+        }
+
+        _failureHandled = false;
+        var target = Session.Current;
+        switch (target.Kind)
+        {
+            case TargetKind.Server:
+                Popups.Schedule(Text.NoAnswerHeader, Text.NoAnswerBody(target.Address.HostForEndpoint, target.Address.EffectivePort));
+                break;
+            case TargetKind.FriendPc:
+                Popups.Schedule(Text.NoAnswerHeader, Text.UnreachableBody(Session.LobbyOwnerName, Session.FriendAddresses));
+                break;
+            case TargetKind.Host when Plugin.Server.State == ServerState.Failed:
+                Popups.Schedule(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));
+                break;
+        }
     }
 }

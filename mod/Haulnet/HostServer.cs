@@ -23,8 +23,8 @@ internal enum ServerState
 /// </summary>
 internal sealed class HostServer
 {
-    /// <summary>The ports R.E.P.O. uses (Photon "alternative UDP ports"): NameServer, Master, Game.</summary>
-    public static readonly int[] Ports = { 27000, 27001, 27002 };
+    /// <summary>NameServer, Master and Game ports: the configured base port and the next two (default 27000-27002).</summary>
+    private int[] _ports = { ServerAddress.DefaultPort, ServerAddress.DefaultPort + 1, ServerAddress.DefaultPort + 2 };
 
     /// <summary>
     /// The only region the host server offers (LuxonServer name "europe", Photon code "eu"). The name has no
@@ -56,15 +56,20 @@ internal sealed class HostServer
     /// <summary>Human-readable reason when <see cref="State"/> is <see cref="ServerState.Failed"/>.</summary>
     public string Error => _error;
 
-    /// <summary>Starts the server unless it is already starting or running.</summary>
-    public void Start()
+    /// <summary>NameServer port of the running (or last started) server.</summary>
+    public int BasePort => _ports[0];
+
+    /// <summary>Starts the server on <paramref name="basePort"/> and the next two ports, unless it already runs there.</summary>
+    public void Start(int basePort)
     {
         lock (_lock)
         {
-            if (_state is ServerState.Starting or ServerState.Running && _process is { HasExited: false })
+            if (_state is ServerState.Starting or ServerState.Running && _process is { HasExited: false } && basePort == _ports[0])
             {
                 return;
             }
+
+            _ports = new[] { basePort, basePort + 1, basePort + 2 };
 
             StopLocked();
             _lastLines.Clear();
@@ -78,7 +83,7 @@ internal sealed class HostServer
             var busy = FindBusyPort();
             if (busy != 0)
             {
-                Fail($"UDP port {busy} is already in use. Close other R.E.P.O. instances or servers and try again.");
+                Fail($"UDP port {busy} is already in use by another program.");
                 return;
             }
 
@@ -202,7 +207,7 @@ internal sealed class HostServer
         }
 
         // LuxonServer logs "Starting NameServer on port N" once per listener, NameServer last.
-        if (_state == ServerState.Starting && line.Contains("Starting NameServer on port " + Ports[0]))
+        if (_state == ServerState.Starting && line.Contains("Starting NameServer on port " + _ports[0]))
         {
             _state = ServerState.Running;
             Plugin.Log.LogInfo("Host server is running.");
@@ -241,9 +246,30 @@ internal sealed class HostServer
         Plugin.Log.LogError(message);
     }
 
-    private static int FindBusyPort()
+    private int FindBusyPort()
     {
-        foreach (var port in Ports)
+        // LuxonServer binds with address reuse, so a test bind can succeed although another server already
+        // listens there (both then receive half of the traffic). Ask Windows for the active listeners first.
+        try
+        {
+            var listening = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners();
+            foreach (var port in _ports)
+            {
+                foreach (var endpoint in listening)
+                {
+                    if (endpoint.Port == port)
+                    {
+                        return port;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug($"Could not list UDP listeners: {e.Message}");
+        }
+
+        foreach (var port in _ports)
         {
             try
             {
@@ -265,7 +291,7 @@ internal sealed class HostServer
     /// address is loopback: the host's own game uses it as is, and joining players rewrite it to the
     /// address they used (see PhotonRedirect). A single region keeps the game's region page short.
     /// </summary>
-    private static string BuildConfig()
+    private string BuildConfig()
     {
         var names = new[] { "NameServer", "MasterServer", "GameServer" };
         var sb = new StringBuilder();
@@ -274,8 +300,8 @@ internal sealed class HostServer
         for (var i = 0; i < names.Length; i++)
         {
             sb.AppendLine($"  {names[i]}:");
-            sb.AppendLine($"    - port: {Ports[i]}");
-            sb.AppendLine($"      external_address: 127.0.0.1:{Ports[i]}");
+            sb.AppendLine($"    - port: {_ports[i]}");
+            sb.AppendLine($"      external_address: 127.0.0.1:{_ports[i]}");
         }
 
         sb.AppendLine("EnableIPv6: true");

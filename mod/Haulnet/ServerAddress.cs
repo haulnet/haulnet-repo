@@ -7,6 +7,9 @@ namespace Haulnet;
 /// <summary>A host with an optional port, as typed by the player.</summary>
 internal readonly struct ServerAddress
 {
+    /// <summary>NameServer port R.E.P.O. uses (Photon "alternative UDP ports"); Master and Game follow it.</summary>
+    public const int DefaultPort = 27000;
+
     private ServerAddress(string host, int port, bool isIPv6)
     {
         Host = host;
@@ -21,6 +24,15 @@ internal readonly struct ServerAddress
     public int Port { get; }
 
     public bool IsIPv6 { get; }
+
+    /// <summary>The port to connect to: the given one, or <see cref="DefaultPort"/>.</summary>
+    public int EffectivePort => Port > 0 ? Port : DefaultPort;
+
+    /// <summary>True when the server uses ports other than the game's default 27000-27002.</summary>
+    public bool HasCustomPort => Port > 0 && Port != DefaultPort;
+
+    public static ServerAddress FromIp(IPAddress ip, int port) =>
+        new(ip.ToString(), port, ip.AddressFamily == AddressFamily.InterNetworkV6);
 
     /// <summary>Host in the form Photon expects inside "host:port" strings (IPv6 in brackets).</summary>
     public string HostForEndpoint => IsIPv6 ? "[" + Host + "]" : Host;
@@ -107,4 +119,11 @@ internal readonly struct ServerAddress
     }
 
     public override string ToString() => Port > 0 ? $"{HostForEndpoint}:{Port}" : HostForEndpoint;
+
+    /// <summary>Short form for display: the port only when it is not the default.</summary>
+    public string Display => HasCustomPort ? $"{HostForEndpoint}:{Port}" : HostForEndpoint;
+
+    /// <summary>Same server, case-insensitive host, default port equal to 27000.</summary>
+    public bool SameAs(ServerAddress other) =>
+        string.Equals(Host, other.Host, System.StringComparison.OrdinalIgnoreCase) && EffectivePort == other.EffectivePort;
 }

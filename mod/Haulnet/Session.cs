@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using Steamworks;
 using UnityEngine;
 
@@ -10,11 +11,14 @@ internal enum TargetKind
     /// <summary>Photon Cloud, the unmodded behaviour.</summary>
     Cloud,
 
-    /// <summary>The server inside this game.</summary>
+    /// <summary>The server inside this game ("On my PC").</summary>
     Host,
 
-    /// <summary>A Haulnet host or dedicated server at <see cref="ConnectionTarget.Address"/>.</summary>
-    Remote,
+    /// <summary>A Haulnet server (community or typed by address) at <see cref="ConnectionTarget.Address"/>.</summary>
+    Server,
+
+    /// <summary>A friend's PC that hosts the game ("On my PC" on their side), reached through the Steam lobby.</summary>
+    FriendPc,
 }
 
 internal sealed class ConnectionTarget
@@ -30,73 +34,83 @@ internal sealed class ConnectionTarget
 
     public TargetKind Kind { get; }
     public ServerAddress Address { get; }
+
+    /// <summary>Server name (Server only); may be empty.</summary>
     public string Label { get; }
 }
 
 /// <summary>
 /// Decides, per connection, where the game connects. There is no global mode:
 /// <list type="bullet">
-/// <item>the host chooses "On my PC" or "Photon Cloud" when creating a private game;</item>
-/// <item>a player who joins through a Steam invite follows the Haulnet data in that lobby;</item>
-/// <item>a server address from the F8 panel applies to the next connection without a lobby (Public game);</item>
+/// <item>a player who creates or looks for a game picks the place on the region page (see <see cref="WherePage"/>):
+/// a Photon region, "On my PC" or a Haulnet server; the choice lasts until the region page or the main menu opens
+/// again;</item>
+/// <item>a player in someone else's Steam lobby (invite, "Join game", public room) follows the Haulnet data in it;</item>
 /// <item>everything else is Photon Cloud.</item>
 /// </list>
-/// The state resets whenever the main menu opens.
 /// </summary>
 internal static class Session
 {
     private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(1.5);
 
+    private static ConnectionTarget _chosen = ConnectionTarget.Cloud;
     private static ulong _resolvedLobbyId;
     private static ConnectionTarget? _resolvedTarget;
 
     /// <summary>The player chose "On my PC" for the game being created.</summary>
-    public static bool HostingOnMyPc { get; private set; }
+    public static bool HostingOnMyPc => _chosen.Kind == TargetKind.Host;
 
-    /// <summary>Server address set in the F8 panel for the next lobby-less connection.</summary>
-    public static ServerAddress? ManualAddress { get; private set; }
-
-    /// <summary>Target of the most recent connection, for the lobby status line and the panel.</summary>
+    /// <summary>Target of the most recent connection, for the lobby status line and the host's checks.</summary>
     public static ConnectionTarget Current { get; private set; } = ConnectionTarget.Cloud;
 
-    public static void ChooseOnMyPc()
+    /// <summary>Steam name of the lobby owner when the current target came from their lobby.</summary>
+    public static string LobbyOwnerName { get; private set; } = "";
+
+    /// <summary>All addresses and the port the friend's PC published, for the failure message.</summary>
+    public static string FriendAddresses { get; private set; } = "";
+
+    public static void ChooseOnMyPc(int port)
     {
-        HostingOnMyPc = true;
-        Plugin.Settings.LastChoiceOnMyPc = true;
-        Plugin.Server.Start();
+        var loopback = ServerAddress.FromIp(IPAddress.Loopback, port);
+        _chosen = new ConnectionTarget(TargetKind.Host, loopback, "");
+        Plugin.Server.Start(port);
         Plugin.Probe.StartResponding();
+        Plugin.Log.LogInfo($"Where to play: on this PC, UDP {port}-{port + 2}.");
     }
 
+    public static void ChooseServer(ServerAddress address, string name)
+    {
+        StopHosting();
+        _chosen = new ConnectionTarget(TargetKind.Server, address, name);
+        Plugin.Log.LogInfo($"Where to play: server {address}{(name.Length > 0 ? " (" + name + ")" : "")}.");
+    }
+
+    /// <summary>Photon Cloud, or nothing chosen yet. Called when the region page opens.</summary>
     public static void ChooseCloud()
     {
-        HostingOnMyPc = false;
-        Plugin.Settings.LastChoiceOnMyPc = false;
-        StopHosting();
-    }
-
-    public static void SetManualAddress(ServerAddress? address)
-    {
-        ManualAddress = address;
-        if (address.HasValue)
+        if (_chosen.Kind != TargetKind.Cloud)
         {
-            Plugin.Settings.LastManualAddress = address.Value.ToString();
+            Plugin.Log.LogInfo("Where to play: choice cleared (Photon Cloud unless chosen again).");
         }
+
+        _chosen = ConnectionTarget.Cloud;
+        StopHosting();
     }
 
     /// <summary>Back to the unmodded state. Called when the main menu opens.</summary>
     public static void Reset()
     {
-        if (HostingOnMyPc || ManualAddress.HasValue || Current.Kind != TargetKind.Cloud)
+        if (_chosen.Kind != TargetKind.Cloud || Current.Kind != TargetKind.Cloud)
         {
             Plugin.Log.LogInfo("Main menu: session reset, back to Photon Cloud.");
         }
 
-        HostingOnMyPc = false;
-        ManualAddress = null;
+        _chosen = ConnectionTarget.Cloud;
         Current = ConnectionTarget.Cloud;
         _resolvedLobbyId = 0;
-        _unreachableHost = null;
         _resolvedTarget = null;
+        LobbyOwnerName = "";
+        FriendAddresses = "";
         HostAuthority.Reset();
         StopHosting();
     }
@@ -121,24 +135,7 @@ internal static class Session
     {
         var lobby = LobbyData.CurrentLobby();
         var inForeignLobby = SteamClient.IsValid && lobby.Id.IsValid && !lobby.IsOwnedBy(SteamClient.SteamId);
-
-        if (inForeignLobby)
-        {
-            return ResolveFromLobby(lobby);
-        }
-
-        if (HostingOnMyPc)
-        {
-            ServerAddress.TryParse("127.0.0.1", out var loopback, out _);
-            return new ConnectionTarget(TargetKind.Host, loopback, "");
-        }
-
-        if (ManualAddress.HasValue)
-        {
-            return new ConnectionTarget(TargetKind.Remote, ManualAddress.Value, "");
-        }
-
-        return ConnectionTarget.Cloud;
+        return inForeignLobby ? ResolveFromLobby(lobby) : _chosen;
     }
 
     private static ConnectionTarget ResolveFromLobby(Steamworks.Data.Lobby lobby)
@@ -148,72 +145,61 @@ internal static class Session
             return _resolvedTarget; // The game reconnects several times per join; probe only once.
         }
 
+        LobbyOwnerName = OwnerName(lobby);
+        FriendAddresses = "";
         var info = LobbyData.Read(lobby);
         ConnectionTarget target;
         if (info == null)
         {
-            target = ConnectionTarget.Cloud; // The host plays through Photon Cloud.
-        }
-        else if (info.Addresses.Count == 0)
-        {
-            Plugin.Log.LogError("The host uses Haulnet but published no addresses.");
-            _unreachableHost = OwnerName(lobby);
-            target = ConnectionTarget.Cloud;
+            target = ConnectionTarget.Cloud; // The game lives in Photon Cloud.
         }
         else
         {
-            if (info.Protocol != HostProbe.ProtocolVersion)
+            if (info.Protocol > LobbyData.Protocol)
             {
-                Plugin.Log.LogWarning($"Host uses Haulnet protocol {info.Protocol}, this game uses {HostProbe.ProtocolVersion}.");
+                Plugin.Log.LogWarning($"The host uses Haulnet lobby protocol {info.Protocol}, this mod knows {LobbyData.Protocol}; trying anyway.");
             }
 
-            var probe = HostProbe.FindReachable(info.Addresses.Select(a => a.Address).ToList(), ProbeTimeout);
-            PublishedAddress chosen;
-            string label;
-            if (probe != null)
-            {
-                chosen = info.Addresses.FirstOrDefault(a => a.Address.Equals(probe.Address)) ?? new PublishedAddress(probe.Address, "");
-                label = chosen.Label;
-                Plugin.Log.LogInfo($"Host reachable at {probe.Address} ({chosen.Label}), probe {probe.RoundTripMs} ms.");
-            }
-            else
-            {
-                // No answer from any address: stop here with a clear message (see JoinGuard) instead of
-                // letting the game wait for a connection timeout and show a generic error.
-                chosen = info.Addresses[0];
-                label = Text.LabelUnverified;
-                Plugin.Log.LogWarning("No host address answered the reachability probe; the join will be cancelled.");
-                _unreachableHost = OwnerName(lobby);
-            }
-
-            var text = chosen.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
-                ? $"[{chosen.Address}]"
-                : chosen.Address.ToString();
-            ServerAddress.TryParse(text, out var address, out _);
-            target = new ConnectionTarget(TargetKind.Remote, address, label);
+            target = info.Server.HasValue
+                ? new ConnectionTarget(TargetKind.Server, info.Server.Value, "")
+                : ResolveFriendPc(info);
         }
 
         _resolvedLobbyId = lobby.Id.Value;
         _resolvedTarget = target;
+        Plugin.Log.LogInfo($"Following the Steam lobby of {LobbyOwnerName}: {target.Kind} {target.Address}.");
         return target;
     }
 
-    private static string? _unreachableHost;
-
     /// <summary>
-    /// True once after a join was resolved to a host that did not answer; returns the host's Steam name.
+    /// The game runs on the friend's PC: use the published address that answers the probe first. When none
+    /// answers (the probe uses UDP 47777, which the host may not have opened), connect to the first one anyway;
+    /// if that fails too, the player sees exactly which addresses and port were tried.
     /// </summary>
-    public static bool TakeUnreachable(out string hostName)
+    private static ConnectionTarget ResolveFriendPc(HostInfo info)
     {
-        hostName = _unreachableHost ?? "";
-        if (_unreachableHost == null)
+        var port = info.Port > 0 ? info.Port : ServerAddress.DefaultPort;
+        FriendAddresses = string.Join(", ", info.Addresses.Select(a => ServerAddress.FromIp(a, 0).Display)) + ", UDP " + port;
+        if (info.Addresses.Count == 0)
         {
-            return false;
+            Plugin.Log.LogError("The host uses Haulnet but published no addresses.");
+            return ConnectionTarget.Cloud;
         }
 
-        _unreachableHost = null;
-        _resolvedTarget = null; // Try again on the next attempt.
-        return true;
+        var probe = HostProbe.FindReachable(info.Addresses.ToList(), ProbeTimeout);
+        IPAddress chosen;
+        if (probe != null)
+        {
+            chosen = probe.Address;
+            Plugin.Log.LogInfo($"Host answered at {probe.Address}, probe {probe.RoundTripMs} ms.");
+        }
+        else
+        {
+            chosen = info.Addresses[0];
+            Plugin.Log.LogWarning($"No host address answered the probe on UDP {HostProbe.Port}; connecting to {chosen} anyway.");
+        }
+
+        return new ConnectionTarget(TargetKind.FriendPc, ServerAddress.FromIp(chosen, info.Port), "");
     }
 
     private static string OwnerName(Steamworks.Data.Lobby lobby)
@@ -238,14 +224,14 @@ internal static class Session
 /// <summary>Shows messages through the game's own popup pages.</summary>
 internal static class Popups
 {
-    private static readonly Color Header = new(1f, 0.55f, 0f);
+    public static readonly Color Accent = new(1f, 0.55f, 0f);
 
     /// <summary>Shows the popup the next time the game returns to a menu (after a failed connection).</summary>
     public static void Schedule(string header, string body)
     {
         try
         {
-            MenuManager.instance?.PagePopUpScheduled(header, Header, body, Text.Ok, richText: false);
+            MenuManager.instance?.PagePopUpScheduled(header, Accent, body, Text.Ok, richText: false);
         }
         catch (Exception e)
         {
@@ -257,7 +243,7 @@ internal static class Popups
     {
         try
         {
-            MenuManager.instance?.PagePopUp(header, Header, body, Text.Ok, richText: false);
+            MenuManager.instance?.PagePopUp(header, Accent, body, Text.Ok, richText: false);
         }
         catch (Exception e)
         {

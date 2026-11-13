@@ -28,41 +28,62 @@ internal static class Text
 
     public const string Title = "Haulnet";
 
-    // Host choice popup
-    public static string WhereHeader => T("WHERE TO HOST?", "ГДЕ СОЗДАТЬ ИГРУ?");
-    public static string WhereBody => T(
-        "On your PC: friends connect straight to you, no Photon servers in between. Everyone needs Haulnet.\n\nPhoton Cloud: as in the normal game, anyone can join.",
-        "На твоём ПК: друзья подключаются прямо к тебе, без серверов Photon. У всех должен быть Haulnet.\n\nPhoton Cloud: как в обычной игре, зайти может кто угодно.");
-    public static string OptionMyPc => T("ON MY PC", "НА МОЁМ ПК");
-    public static string OptionCloud => "PHOTON CLOUD";
+    // Region page ("where to play")
+    public static string SectionHaulnet => "HAULNET";
+    public static string SectionPhoton => "PHOTON CLOUD";
+    public static string RowOnMyPc => T("On my PC", "На моём ПК");
+    public static string RowByAddress => T("+ Server by address...", "+ Сервер по адресу...");
+    public static string HintFull => T("full", "заполнен");
+    public static string Checking => T("checking...", "проверка...");
+    public static string NoPing => "—";
+    public static string Ms => T("ms", "мс");
 
-    // Popups
+    // Server by address
+    public static string AddressHeader => T("SERVER BY ADDRESS", "СЕРВЕР ПО АДРЕСУ");
+    public static string AddressBody => T("SERVER ADDRESS", "АДРЕС СЕРВЕРА");
+    public static string Connect => T("CONNECT", "ПОДКЛЮЧИТЬСЯ");
+    public static string AddressInvalidHeader => T("WRONG ADDRESS", "НЕВЕРНЫЙ АДРЕС");
+    public static string AddressInvalidBody(string text, string error) => T(
+        $"\"{text}\" is not a server address ({error}).\nUse host or host:port, for example play.example.org or 203.0.113.5:27100.",
+        $"«{text}» не похоже на адрес сервера ({error}).\nНужно имя или имя:порт, например play.example.org или 203.0.113.5:27100.");
+    public static string NotFoundHeader => T("SERVER NOT FOUND", "СЕРВЕР НЕ НАЙДЕН");
+    public static string NotFoundBody(string host) => T(
+        $"The name {host} does not resolve to an address.",
+        $"Имя {host} не находится в DNS.");
+    public static string FullHeader => T("SERVER IS FULL", "СЕРВЕР ЗАПОЛНЕН");
+    public static string FullBody(string server) => T(
+        $"{server} does not accept new games (its status says accepting: false).",
+        $"{server} не принимает новые игры (статус сервера: accepting: false).");
+
+    // Connection failures
+    public static string NoAnswerHeader => T("HAULNET: NO CONNECTION", "HAULNET: НЕТ ПОДКЛЮЧЕНИЯ");
+    public static string NoAnswerBody(string server, int port) => T(
+        $"No answer from {server} on UDP {port}.",
+        $"Нет ответа от {server} по UDP {port}.");
+
+    // On my PC
     public static string ServerFailedHeader => T("HAULNET: SERVER ERROR", "HAULNET: ОШИБКА СЕРВЕРА");
     public static string ServerFailedBody(string error) => T(
         $"The server on your PC could not start.\n\n{error}",
         $"Не удалось запустить сервер на твоём ПК.\n\n{error}");
-    public static string UnreachableHeader => T("HAULNET: HOST NOT REACHABLE", "HAULNET: ХОСТ НЕДОСТУПЕН");
-    public static string UnreachableBody(string host) => T(
-        $"Could not reach {Name(host, "the host")}'s PC directly. Join the same local network or VPN (Radmin, WireGuard, Tailscale), or ask the host to allow R.E.P.O. and luxon_server in Windows Firewall, or to create the game in Photon Cloud.",
-        $"Не удалось достучаться до ПК {Name(host, "хоста")} напрямую. Подключитесь к одной локальной сети или VPN (Radmin, WireGuard, Tailscale), либо попроси хоста разрешить R.E.P.O. и luxon_server в брандмауэре Windows или создать игру в Photon Cloud.");
+    public static string PortHeader => T("PORT", "ПОРТ");
+    public static string PortBody => T("UDP PORT", "UDP-ПОРТ");
+    public static string Create => T("CREATE", "СОЗДАТЬ");
+    public static string PortInvalidHeader => T("WRONG PORT", "НЕВЕРНЫЙ ПОРТ");
+    public static string PortInvalidBody(string text) => T(
+        $"\"{text}\": the port must be a number from 1024 to 65533. The game uses it and the next two ports.",
+        $"«{text}»: порт должен быть числом от 1024 до 65533. Игра занимает его и два следующих.");
 
-    // Host: before hosting without any address reachable from outside
-    public static string LanOnlyHeader => T("ONLY YOUR HOME NETWORK?", "ТОЛЬКО ДОМАШНЯЯ СЕТЬ?");
-    public static string LanOnlyBody => T(
-        "Your PC has no VPN (Radmin, WireGuard, Tailscale) and no public address. Friends on your home network can join; friends elsewhere probably cannot. For them, create the game in Photon Cloud.",
-        "У твоего ПК нет VPN (Radmin, WireGuard, Tailscale) и внешнего адреса. Друзья из твоей домашней сети подключатся, остальные, скорее всего, нет. Для них создай игру в Photon Cloud.");
+    // Friend: the host's PC could not be reached
+    public static string UnreachableBody(string host, string addresses) => T(
+        $"No answer from {Name(host, "the host")}'s PC ({addresses}).",
+        $"Нет ответа от ПК {Name(host, "хоста")} ({addresses}).");
 
-    // Host: a friend did not make it in
+    // Host: a friend reported that the connection failed
     public static string FriendFailedHeader => T("HAULNET: FRIEND NOT CONNECTED", "HAULNET: ДРУГ НЕ ПОДКЛЮЧИЛСЯ");
-    public static string FriendUnreachableBody(string friend) => T(
-        $"{Name(friend, "A friend")} could not reach your PC. Join the same VPN (Radmin, WireGuard, Tailscale), allow R.E.P.O. and luxon_server in Windows Firewall, or create the game in Photon Cloud.",
-        $"{Name(friend, "Друг")} не смог достучаться до твоего ПК. Подключитесь к одному VPN (Radmin, WireGuard, Tailscale), разреши R.E.P.O. и luxon_server в брандмауэре Windows или создай игру в Photon Cloud.");
-    public static string FriendLeftBody(string friend) => T(
-        $"{Name(friend, "A friend")} accepted the invite but left before joining. They may not have Haulnet installed, or cannot reach your PC.",
-        $"{Name(friend, "Друг")} принял приглашение, но вышел, не дойдя до игры. Возможно, у него нет Haulnet или он не может достучаться до твоего ПК.");
-    public static string FriendSlowBody(string friend, int seconds) => T(
-        $"{Name(friend, "A friend")} still has not joined after {seconds} seconds. They may not be able to reach your PC.",
-        $"{Name(friend, "Друг")} всё ещё не подключился за {seconds} секунд. Возможно, он не может достучаться до твоего ПК.");
+    public static string FriendUnreachableBody(string friend, int port) => T(
+        $"{Name(friend, "A friend")} got no answer from your PC on UDP {port}-{port + 2}.",
+        $"{Name(friend, "Друг")} не получил ответа от твоего ПК по UDP {port}-{port + 2}.");
 
     private static string Name(string name, string fallback) => string.IsNullOrWhiteSpace(name) ? fallback : name;
     public static string Ok => "OK";
@@ -74,44 +95,15 @@ internal static class Text
     public static string BannedBody => T(
         "The host has banned you from this game.",
         "Хост запретил тебе заходить в эту игру.");
+    public static string IncompatibleHeader => T("HAULNET IS OFF", "HAULNET ВЫКЛЮЧЕН");
+    public static string IncompatibleBody => T(
+        "Haulnet is not compatible with this game version yet. You are playing through Photon Cloud as usual.",
+        "Haulnet пока не совместим с этой версией игры. Ты играешь через Photon Cloud, как обычно.");
 
     // Lobby status line
-    public static string StatusHosting => T("Haulnet · hosted on your PC", "Haulnet · игра на твоём ПК");
-    public static string StatusJoined(string address, string label) => T(
-        $"Haulnet · host {address} · {label}",
-        $"Haulnet · хост {address} · {label}");
-    public static string StatusManual(string address) => T($"Haulnet · server {address}", $"Haulnet · сервер {address}");
-
-    // Address labels (written into Steam lobby data by the host and shown to friends)
-    public static string LabelVpn(string adapter) => $"VPN ({adapter})";
-    public static string LabelLan(string adapter) => T($"local network ({adapter})", $"локальная сеть ({adapter})");
-    public static string LabelIPv6 => "IPv6";
-    public static string LabelPublic => T("internet", "интернет");
-    public static string LabelUnverified => T("not confirmed", "не подтверждено");
-
-    // Diagnostics panel (F8)
-    public static string PanelSession => T("Next connection:", "Следующее подключение:");
-    public static string SessionCloud => T("Photon Cloud (normal game)", "Photon Cloud (обычная игра)");
-    public static string SessionHost => T("your PC (Haulnet server)", "твой ПК (сервер Haulnet)");
-    public static string SessionManual(string address) => T($"server {address}", $"сервер {address}");
-    public static string ServerRunning => T("Server: running", "Сервер: работает");
-    public static string ServerStarting => T("Server: starting...", "Сервер: запускается...");
-    public static string ServerStopped => T("Server: stopped", "Сервер: остановлен");
-    public static string ServerError => T("Server error:", "Ошибка сервера:");
-    public static string Retry => T("Retry", "Повторить");
-    public static string YourAddresses => T(
-        "Your addresses (friends receive them with the Steam invite):",
-        "Твои адреса (друзья получают их вместе со Steam-инвайтом):");
-    public static string NoAddresses => T("No network addresses found.", "Сетевые адреса не найдены.");
-    public static string Copy => T("Copy", "Копировать");
-    public static string Copied => T("Copied", "Скопировано");
-    public static string ManualJoin => T(
-        "Server by address (applies to the next Public game):",
-        "Сервер по адресу (для следующей публичной игры):");
-    public static string Apply => T("Use", "Использовать");
-    public static string Clear => T("Clear", "Сбросить");
-    public static string AddressInvalid => T("Invalid address:", "Неверный адрес:");
-    public static string FirewallNote => T(
-        "If Windows asks about the firewall for luxon_server or R.E.P.O., allow it, or friends cannot connect.",
-        "Если Windows спросит про брандмауэр для luxon_server или R.E.P.O., разреши доступ, иначе друзья не подключатся.");
+    public static string StatusHosting(int port) => T(
+        $"Haulnet · on your PC · UDP {port}-{port + 2}",
+        $"Haulnet · на твоём ПК · UDP {port}-{port + 2}");
+    public static string StatusServer(string server) => T($"Haulnet · server {server}", $"Haulnet · сервер {server}");
+    public static string StatusFriendPc(string address) => T($"Haulnet · host {address}", $"Haulnet · хост {address}");
 }

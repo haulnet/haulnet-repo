@@ -35,30 +35,32 @@ flowchart LR
 
 Every player installs the mod. Out of the box nothing changes: the game plays through Photon Cloud as usual.
 
-**Host:** *Private game* → the game asks **"Where to host?"**
+Haulnet adds a **HAULNET** section to the game's region page, which both *Private game* and *Public game*
+open. Pick where the game lives there, exactly like picking a region; the Photon regions stay below it.
 
-- **On my PC**: a server starts inside your game and the save page opens right away (no region choice: the
-  server is your PC). Create the game as usual and invite friends through Steam.
-  The lobby shows "Haulnet · hosted on your PC". The server stops when you return to the main menu.
-- **Photon Cloud**: the normal game; friends without Haulnet can join too.
+- **On my PC** (private games): like Minecraft's "Open to LAN". Enter the UDP port (the last one is
+  prefilled, 27000 by default); a server starts inside your game on that port and the next two. The lobby shows
+  "Haulnet · on your PC · UDP 27000-27002". How friends reach your PC (same network, a VPN, a forwarded port) is
+  up to you; Haulnet does not guess. Invite friends through Steam; the invite carries your addresses and port.
+  The server stops when you return to the main menu.
+- **Your servers**: servers you played on recently (up to 5) with their ping, and servers you saved in the
+  config file. A server that runs the `haulnet-server` package shows its name and whether it is full.
+- **+ Server by address...**: type `host` or `host:port` (port 27000 if not given; Ctrl+V pastes). Use it for
+  a server you run yourself or one a friend told you about; it does not need to be listed anywhere.
+- **Photon Cloud regions**: the normal game; friends without Haulnet can join too.
 
-Your last answer is offered first next time.
+On a server, a private game works as usual (invite friends through Steam); a public game opens the game's own
+*Public game* page, so *Random matchmaking* and the *Server list* (with *Create new*) work on that server.
 
-**Friends:** accept the Steam invite or use *Join friend*, as always. The invite carries the host's
-addresses; Haulnet checks which one answers (LAN, VPN, IPv6, internet) and connects there. The lobby shows
-which address is used. After leaving, everything is back to normal.
+**Friends:** accept the Steam invite or use *Join friend*, as always. The invite says where the game lives:
+on a server, or on the host's PC with all of the host's addresses and the port; Haulnet uses the address that
+answers first and connects there. The lobby shows where you are connected. If the connection fails, the
+friend sees which addresses and port were tried, and the host sees who got no answer. After leaving,
+everything is back to normal.
 
-Friends outside your home network can reach your PC only through a VPN you share (Radmin, WireGuard,
-Tailscale), a public address with forwarded ports, or IPv6. If your PC has none of these, Haulnet warns you
-before hosting. If a friend still cannot reach you, their join stops at once with a message, and you are
-told who could not connect.
-
-**Dedicated server (advanced):** press **F8** in the main menu, enter the server address and press *Use*;
-the next *Public game* goes to that server.
-
-Network: the server uses **UDP 27000-27002**; the reachability check uses **UDP 47777**. If Windows asks
-whether `luxon_server` or R.E.P.O. may use the network, allow it, or friends cannot connect. Over the
-internet without a VPN, the host must forward those UDP ports on their router.
+Network: the server on your PC uses the port you enter and the next two (**UDP 27000-27002** by default);
+the address check between a friend and the host uses **UDP 47777** and is optional. Windows Firewall may ask
+whether `luxon_server` and R.E.P.O. may use the network.
 
 Lobby password, kick and ban work in Haulnet games too. Photon Cloud checks them on its servers; in a
 Haulnet game the host's mod does it, so a refused player may appear in the lobby for a moment before
@@ -87,7 +89,8 @@ for the first build.
 Game, Photon and BepInEx assemblies are referenced from your installation and never included in this
 repository.
 
-Settings are stored in `BepInEx/config/haulnet.repo.cfg`. To remove the mod, delete
+Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
+(`[Servers] Saved = Name=host[:port];...`) and the recent list. To remove the mod, delete
 `BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
 `doorstop_config.ini` and `.doorstop_version` from the game folder.
 
