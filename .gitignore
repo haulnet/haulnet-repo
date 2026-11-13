@@ -1,0 +1,5 @@
+mod/lib/
+mod/**/bin/
+mod/**/obj/
+*.user
+.vs/
