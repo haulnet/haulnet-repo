@@ -11,12 +11,13 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "haulnet.repo";
     public const string Name = "Haulnet";
-    public const string Version = "0.3.0";
+    public const string Version = "0.4.0";
 
     internal static ManualLogSource Log { get; private set; } = null!;
     internal static HaulnetConfig Settings { get; private set; } = null!;
     internal static HostServer Server { get; private set; } = null!;
     internal static HostProbe Probe { get; private set; } = null!;
+    internal static HaulnetRunner Runner { get; private set; } = null!;
 
     private Harmony? _harmony;
 
@@ -43,12 +44,11 @@ public sealed class Plugin : BaseUnityPlugin
         }
 
         // Optional parts: each one logs and skips itself if its game hook is missing.
-        RegionPing.Apply(_harmony);
+        Runner = HaulnetRunner.Create();
+        WherePage.Apply(_harmony);
         MenuIntegration.Apply(_harmony);
-
-        var runner = HaulnetRunner.Create();
-        HostAuthority.Apply(_harmony, runner.gameObject);
-        JoinGuard.Apply(_harmony, runner.gameObject);
+        HostAuthority.Apply(_harmony, Runner.gameObject);
+        JoinGuard.Apply(_harmony, Runner.gameObject);
         Log.LogInfo($"{Name} {Version} loaded.");
     }
 }

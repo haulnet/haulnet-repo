@@ -35,6 +35,10 @@ internal static class PhotonRedirect
     // Photon clients live for the whole game session (PUN's client and the voice client), so a plain
     // dictionary does not leak in practice.
     private static readonly Dictionary<LoadBalancingClient, string> OriginalNameServerHosts = new();
+    private static readonly Dictionary<LoadBalancingClient, PhotonPortDefinition> OriginalPorts = new();
+
+    // Ports for a server that does not use the game's 27000-27002, or null for the game's own port set.
+    private static PhotonPortDefinition? _portOverride;
 
     private static ServerAddress _active;
     private static bool _isActive;
@@ -78,6 +82,7 @@ internal static class PhotonRedirect
     private static void AfterPhotonSetAppId()
     {
         _isActive = false;
+        _portOverride = null;
 
         var target = Session.ResolveForConnect();
         if (target.Kind == TargetKind.Cloud)
@@ -92,7 +97,7 @@ internal static class PhotonRedirect
             var server = Plugin.Server;
             if (server.State != ServerState.Running)
             {
-                server.Start();
+                server.Start(target.Address.EffectivePort);
                 Plugin.Probe.StartResponding();
                 if (!server.WaitUntilReady(TimeSpan.FromSeconds(5)))
                 {
@@ -108,6 +113,13 @@ internal static class PhotonRedirect
         // 0 lets Photon use the game's port set (AlternativeUdpPorts: NameServer on 27000).
         app.Port = address.Port;
         app.UseNameServer = true;
+        if (address.HasCustomPort)
+        {
+            // The game forces 27000/27001/27002 through ServerPortOverrides. For another port, connect to the
+            // NameServer on that port and take the Master and Game ports from the server's answers (0 = no override).
+            _portOverride = new PhotonPortDefinition { NameServerPort = (ushort)address.Port };
+            PhotonNetwork.ServerPortOverrides = _portOverride.Value;
+        }
 
         _active = address;
         _isActive = true;
@@ -134,8 +146,24 @@ internal static class PhotonRedirect
             }
 
             __instance.AddressRewriter = Rewriter;
+            if (_portOverride.HasValue)
+            {
+                if (!OriginalPorts.ContainsKey(__instance))
+                {
+                    OriginalPorts[__instance] = __instance.ServerPortOverrides;
+                }
+
+                __instance.ServerPortOverrides = _portOverride.Value;
+            }
+            else
+            {
+                RestorePorts(__instance);
+            }
+
             return;
         }
+
+        RestorePorts(__instance);
 
         if (__instance.AddressRewriter == Rewriter)
         {
@@ -146,6 +174,16 @@ internal static class PhotonRedirect
         {
             Plugin.Log.LogInfo($"Photon Cloud: restoring NameServer host {original} (was {__instance.NameServerHost}).");
             __instance.NameServerHost = original;
+        }
+    }
+
+    /// <summary>Undo a port override. The game sets PUN's own client again in PhotonSetAppId; this covers the voice client.</summary>
+    private static void RestorePorts(LoadBalancingClient client)
+    {
+        if (OriginalPorts.TryGetValue(client, out var ports))
+        {
+            client.ServerPortOverrides = ports;
+            OriginalPorts.Remove(client);
         }
     }
 
