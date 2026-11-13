@@ -34,6 +34,9 @@ In order of priority:
 - **Client:** C#, BepInEx 5, HarmonyX ([ADR 0002](docs/decisions/0002-client-mod-stack.md)).
   Redirect in-process; never edit the `hosts` file or any system configuration
   ([ADR 0003](docs/decisions/0003-in-process-redirect.md)).
+- **Connectivity:** players must not need VPN programs or administrator rights. The tunnel forwards only
+  Photon datagrams to LuxonServer and never adds its own reliability layer. Wire protocol changes are
+  documented in `docs/protocol.md` and versioned ([connectivity.md](docs/connectivity.md)).
 - **Minimal patching.** Prefer one well-chosen hook over many. Every Harmony patch documents in a
   comment which game method it targets and why, and fails safe: if the target is missing after a game
   update, log a clear error and fall back to *Cloud* mode instead of crashing.
@@ -63,7 +66,9 @@ SECURITY.md               vulnerability reporting
 THIRD_PARTY_NOTICES.md    licenses of redistributed components
 docs/                     design docs, ADRs, testing checklist, test reports
 mod/                      BepInEx plugin (C#)                       — phase 1
-server/                   Docker image, compose file, config template — phase 3
+shared/                   tunnel protocol library used by mod and hub — phase 3
+hub/                      SemiLink Hub (.NET 8)                     — phase 3
+server/                   Docker images, compose files, config templates — phase 5
 packaging/thunderstore/   manifest, icon, store README              — phase 4
 .github/                  issue/PR templates, workflows
 ```

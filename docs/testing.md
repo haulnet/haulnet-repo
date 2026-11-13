@@ -7,7 +7,8 @@ checked **manually by at least two players on two PCs** with this checklist. Res
 ## Environment
 
 - [ ] Game version, SemiLink version, LuxonServer version recorded
-- [ ] Network: same LAN / Radmin VPN / ZeroTier / Tailscale / public IP
+- [ ] Network: same LAN / different homes; ISP and router type; active tunnel path shown by the mod
+      (LAN, IPv6, UPnP, hole-punched, relayed, manual)
 - [ ] Host OS and client OS
 
 ## Core flow

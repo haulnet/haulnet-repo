@@ -18,3 +18,4 @@ Rules:
 | [0003](0003-in-process-redirect.md) | Redirect the game in-process, not through the hosts file | Accepted |
 | [0004](0004-server-distribution.md) | Server distribution: bundled, standalone, Docker | Accepted |
 | [0005](0005-no-piracy-features.md) | No features that target unlicensed copies | Accepted |
+| [0006](0006-built-in-connectivity.md) | Built-in connectivity: own tunnel and self-hostable Hub | Proposed |

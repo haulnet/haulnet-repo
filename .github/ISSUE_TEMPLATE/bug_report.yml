@@ -25,7 +25,7 @@ body:
     id: network
     attributes:
       label: Network
-      options: [Same LAN, Radmin VPN, ZeroTier, Tailscale, Port forwarding, VPS, Other]
+      options: [Same LAN, Built-in tunnel (direct), Built-in tunnel (relayed), Dedicated server, Manual address / third-party VPN, Other]
     validations:
       required: true
   - type: textarea
