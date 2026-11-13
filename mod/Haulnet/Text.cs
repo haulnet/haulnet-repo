@@ -46,6 +46,14 @@ internal static class Text
         "Your game could not reach the host directly. Join the same local network or VPN as the host, or ask the host to allow Haulnet in Windows Firewall or forward UDP 27000-27002.",
         "Не удалось достучаться до хоста напрямую. Подключись к той же локальной сети или VPN, что и хост, либо попроси хоста разрешить Haulnet в брандмауэре Windows или пробросить UDP 27000-27002.");
     public static string Ok => "OK";
+    public static string WrongPasswordHeader => T("WRONG PASSWORD", "НЕВЕРНЫЙ ПАРОЛЬ");
+    public static string WrongPasswordBody => T(
+        "The lobby password you entered is not correct.",
+        "Пароль лобби введён неверно.");
+    public static string BannedHeader => T("BANNED", "ВЫ ЗАБАНЕНЫ");
+    public static string BannedBody => T(
+        "The host has banned you from this game.",
+        "Хост запретил тебе заходить в эту игру.");
 
     // Lobby status line
     public static string StatusHosting => T("Haulnet · hosted on your PC", "Haulnet · игра на твоём ПК");

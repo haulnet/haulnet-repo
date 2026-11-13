@@ -46,7 +46,8 @@ public sealed class Plugin : BaseUnityPlugin
         RegionPing.Apply(_harmony);
         MenuIntegration.Apply(_harmony);
 
-        HaulnetRunner.Create();
+        var runner = HaulnetRunner.Create();
+        HostAuthority.Apply(_harmony, runner.gameObject);
         Log.LogInfo($"{Name} {Version} loaded.");
     }
 }

@@ -96,6 +96,7 @@ internal static class Session
         Current = ConnectionTarget.Cloud;
         _resolvedLobbyId = 0;
         _resolvedTarget = null;
+        HostAuthority.Reset();
         StopHosting();
     }
 

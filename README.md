@@ -55,6 +55,10 @@ Network: the server uses **UDP 27000-27002**; the reachability check uses **UDP 
 whether `luxon_server` or R.E.P.O. may use the network, allow it, or friends cannot connect. Over the
 internet without a VPN, the host must forward those UDP ports on their router.
 
+Lobby password, kick and ban work in Haulnet games too. Photon Cloud checks them on its servers; in a
+Haulnet game the host's mod does it, so a refused player may appear in the lobby for a moment before
+being removed.
+
 All players need the same game version, and everyone in a Haulnet game needs Haulnet.
 
 ## Building from source
