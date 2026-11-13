@@ -37,7 +37,8 @@ Every player installs the mod. Out of the box nothing changes: the game plays th
 
 **Host:** *Private game* → the game asks **"Where to host?"**
 
-- **On my PC**: a server starts inside your game. Create the game as usual and invite friends through Steam.
+- **On my PC**: a server starts inside your game and the save page opens right away (no region choice: the
+  server is your PC). Create the game as usual and invite friends through Steam.
   The lobby shows "Haulnet · hosted on your PC". The server stops when you return to the main menu.
 - **Photon Cloud**: the normal game; friends without Haulnet can join too.
 

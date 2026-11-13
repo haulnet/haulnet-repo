@@ -26,6 +26,13 @@ internal sealed class HostServer
     /// <summary>The ports R.E.P.O. uses (Photon "alternative UDP ports"): NameServer, Master, Game.</summary>
     public static readonly int[] Ports = { 27000, 27001, 27002 };
 
+    /// <summary>
+    /// The only region the host server offers (LuxonServer name "europe", Photon code "eu"). The name has no
+    /// meaning for a server on the host's PC; it only has to match on both sides.
+    /// </summary>
+    public const string RegionCode = "eu";
+    private const string RegionName = "europe";
+
     private const string ExecutableName = "luxon_server.exe";
     private const int MaxRememberedLines = 20;
 
@@ -277,7 +284,7 @@ internal sealed class HostServer
         sb.AppendLine("TickTimeBudget: 2000");
         sb.AppendLine("NoBanner: true");
         sb.AppendLine("Regions:");
-        sb.AppendLine("  - europe");
+        sb.AppendLine("  - " + RegionName);
         sb.AppendLine("HTTP:");
         sb.AppendLine("  enabled: false");
         return sb.ToString();

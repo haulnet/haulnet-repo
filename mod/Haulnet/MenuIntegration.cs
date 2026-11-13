@@ -93,6 +93,11 @@ internal static class MenuIntegration
                 Session.ChooseCloud();
                 return;
             }
+
+            if (OpenSavesDirectly())
+            {
+                return;
+            }
         }
         else
         {
@@ -109,6 +114,33 @@ internal static class MenuIntegration
             _bypassHostChoice = false;
         }
     }
+
+    /// <summary>
+    /// Hosting on this PC: skip the region page. There is one server, the host's own PC, so choosing a region
+    /// is an empty step. Does what <c>MenuPageRegions.PickRegion</c> does for a hosted game: set the region
+    /// and open the save page. <c>NetworkConnect</c> applies region, version and server before connecting.
+    /// Returns false (and the region page opens as usual) if the game code changed.
+    /// </summary>
+    private static bool OpenSavesDirectly()
+    {
+        try
+        {
+            NetworkRegion(DataDirector.instance) = HostServer.RegionCode;
+            SemiFunc.MainMenuSetMultiplayer();
+            MenuManager.instance.PageCloseAll();
+            MenuManager.instance.PageOpen(MenuPageIndex.Saves);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning($"Could not skip the region page, showing it instead: {e.Message}");
+            return false;
+        }
+    }
+
+    // DataDirector.networkRegion is internal in the game.
+    private static readonly AccessTools.FieldRef<DataDirector, string> NetworkRegion =
+        AccessTools.FieldRefAccess<DataDirector, string>("networkRegion");
 
     private static MenuButtonPopUp PopupTemplate()
     {
