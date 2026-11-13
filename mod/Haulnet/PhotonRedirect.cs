@@ -24,12 +24,17 @@ namespace Haulnet;
 /// rewriter replaces their host part with the address this player used, keeping the port.
 /// </item>
 /// </list>
-/// In Cloud mode both hooks leave the game's values untouched.
+/// Where to connect is decided by <see cref="Session"/>; for Photon Cloud both hooks leave the game's values
+/// untouched.
 /// </remarks>
 internal static class PhotonRedirect
 {
     private static readonly Func<string, ServerConnection, string> Rewriter = RewriteAddress;
     private static readonly HashSet<string> LoggedRewrites = new();
+
+    // Photon clients live for the whole game session (PUN's client and the voice client), so a plain
+    // dictionary does not leak in practice.
+    private static readonly Dictionary<LoadBalancingClient, string> OriginalNameServerHosts = new();
 
     private static ServerAddress _active;
     private static bool _isActive;
@@ -69,44 +74,35 @@ internal static class PhotonRedirect
         }
     }
 
-    /// <summary>Runs after the game has written Photon Cloud settings; replaces them in Host and Join modes.</summary>
+    /// <summary>Runs after the game has written Photon Cloud settings; replaces them when not using the cloud.</summary>
     private static void AfterPhotonSetAppId()
     {
         _isActive = false;
 
-        var settings = Plugin.Settings;
-        ServerAddress address;
-        switch (settings.Mode)
+        var target = Session.ResolveForConnect();
+        if (target.Kind == TargetKind.Cloud)
         {
-            case ConnectionMode.Host:
-                // The server runs inside this game. Normally it is already up (started when Host was
-                // selected); if not, give it a moment rather than letting the connect fail.
-                var server = Plugin.Server;
-                if (server.State != ServerState.Running)
-                {
-                    server.Start();
-                    if (!server.WaitUntilReady(TimeSpan.FromSeconds(5)))
-                    {
-                        Plugin.Log.LogError($"Host mode: the server is not running ({server.Error}). The connection will fail; see the Haulnet panel (F8).");
-                    }
-                }
-
-                ServerAddress.TryParse("127.0.0.1", out address, out _);
-                break;
-
-            case ConnectionMode.Join:
-                if (!ServerAddress.TryParse(settings.Address, out address, out var error))
-                {
-                    Plugin.Log.LogError($"Join mode is selected, but the address is invalid ({error}). Using Photon Cloud for this connection.");
-                    return;
-                }
-
-                break;
-
-            default:
-                return;
+            return;
         }
 
+        if (target.Kind == TargetKind.Host)
+        {
+            // Normally already running (started when "On my PC" was chosen); if not, give it a moment
+            // rather than letting the connect fail.
+            var server = Plugin.Server;
+            if (server.State != ServerState.Running)
+            {
+                server.Start();
+                Plugin.Probe.StartResponding();
+                if (!server.WaitUntilReady(TimeSpan.FromSeconds(5)))
+                {
+                    Plugin.Log.LogError($"The server on this PC is not running ({server.Error}); the connection will fail.");
+                    Popups.Schedule(Text.ServerFailedHeader, Text.ServerFailedBody(server.Error));
+                }
+            }
+        }
+
+        var address = target.Address;
         var app = PhotonNetwork.PhotonServerSettings.AppSettings;
         app.Server = address.HostForEndpoint;
         // 0 lets Photon use the game's port set (AlternativeUdpPorts: NameServer on 27000).
@@ -115,19 +111,41 @@ internal static class PhotonRedirect
 
         _active = address;
         _isActive = true;
-        Plugin.Log.LogInfo($"{settings.Mode} mode: connecting to {address} instead of Photon Cloud.");
+        Plugin.Log.LogInfo($"{target.Kind}: connecting to {address} instead of Photon Cloud.");
     }
 
-    /// <summary>Installs or removes the address rewriter right before a Photon client connects.</summary>
+    /// <summary>
+    /// Right before a Photon client connects: install the address rewriter for a self-hosted server, or
+    /// undo everything for Photon Cloud.
+    /// </summary>
+    /// <remarks>
+    /// Photon keeps <c>NameServerHost</c> from the last connection: <c>ConnectUsingSettings</c> sets it when
+    /// <c>AppSettings.Server</c> is filled, but does not restore the cloud default when it is empty again. So
+    /// the original value is remembered per client before the first redirect and put back for cloud
+    /// connections; otherwise a Photon Cloud game after a Haulnet game would still go to the old server.
+    /// </remarks>
     private static void BeforeClientConnect(LoadBalancingClient __instance)
     {
         if (_isActive)
         {
+            if (!OriginalNameServerHosts.ContainsKey(__instance))
+            {
+                OriginalNameServerHosts[__instance] = __instance.NameServerHost;
+            }
+
             __instance.AddressRewriter = Rewriter;
+            return;
         }
-        else if (__instance.AddressRewriter == Rewriter)
+
+        if (__instance.AddressRewriter == Rewriter)
         {
             __instance.AddressRewriter = null;
+        }
+
+        if (OriginalNameServerHosts.TryGetValue(__instance, out var original) && __instance.NameServerHost != original)
+        {
+            Plugin.Log.LogInfo($"Photon Cloud: restoring NameServer host {original} (was {__instance.NameServerHost}).");
+            __instance.NameServerHost = original;
         }
     }
 

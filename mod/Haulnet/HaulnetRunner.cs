@@ -1,27 +1,23 @@
 using System;
 using System.Collections.Generic;
-using Photon.Pun;
 using UnityEngine;
 
 namespace Haulnet;
 
 /// <summary>
-/// Per-frame part of Haulnet: keeps the host server and LAN discovery in line with the selected mode and
-/// draws the in-game panel (IMGUI, menus only). Lives on its own hidden, persistent GameObject.
+/// Per-frame part of Haulnet: answers host reachability probes and draws the diagnostics panel (F8, menus
+/// only, hidden by default). Normal use happens through the game's own menus (see MenuIntegration).
 /// </summary>
 internal sealed class HaulnetRunner : MonoBehaviour
 {
     private const float BaseHeight = 1080f;
     private static readonly TimeSpan AddressRefresh = TimeSpan.FromSeconds(5);
 
-    private readonly LanDiscovery _discovery = new();
-
-    private bool _expanded;
+    private bool _visible;
     private string _addressDraft = "";
     private List<AddressHint> _hints = new();
     private DateTime _nextHintRefresh;
     private string _copied = "";
-    private ConnectionMode _appliedMode = (ConnectionMode)(-1);
     private GUIStyle? _wrap;
 
     public static HaulnetRunner Create()
@@ -33,63 +29,22 @@ internal sealed class HaulnetRunner : MonoBehaviour
 
     private void Start()
     {
-        _addressDraft = Plugin.Settings.Address;
-        Plugin.Settings.ModeChanged += ApplyMode;
-        ApplyMode();
-    }
-
-    private void OnDestroy()
-    {
-        Plugin.Settings.ModeChanged -= ApplyMode;
-        _discovery.Dispose();
-        Plugin.Server.Stop();
-    }
-
-    private void OnApplicationQuit()
-    {
-        _discovery.Dispose();
-        Plugin.Server.Stop();
+        _addressDraft = Plugin.Settings.LastManualAddress;
     }
 
     private void Update()
     {
-        _discovery.Tick();
+        Plugin.Probe.Tick();
     }
 
-    /// <summary>Starts or stops the server and discovery for the current mode.</summary>
-    private void ApplyMode()
+    private void OnDestroy() => Shutdown();
+
+    private void OnApplicationQuit() => Shutdown();
+
+    private static void Shutdown()
     {
-        var mode = Plugin.Settings.Mode;
-        if (mode == _appliedMode)
-        {
-            return;
-        }
-
-        _appliedMode = mode;
-        Plugin.Log.LogInfo(Plugin.Settings.Describe());
-
-        if (mode == ConnectionMode.Host)
-        {
-            Plugin.Server.Start();
-            _nextHintRefresh = DateTime.MinValue;
-        }
-        else
-        {
-            Plugin.Server.Stop();
-        }
-
-        if (!Plugin.Settings.LanDiscovery || mode == ConnectionMode.Cloud)
-        {
-            _discovery.StopAll();
-        }
-        else if (mode == ConnectionMode.Host)
-        {
-            _discovery.StartAnnouncing(PlayerName);
-        }
-        else
-        {
-            _discovery.StartListening();
-        }
+        Plugin.Probe.StopResponding();
+        Plugin.Server.Stop();
     }
 
     private static bool InMenus()
@@ -106,14 +61,19 @@ internal sealed class HaulnetRunner : MonoBehaviour
 
     private void OnGUI()
     {
-        var e = Event.current;
-        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F8 && InMenus())
+        if (!InMenus())
         {
-            _expanded = !_expanded;
+            return;
+        }
+
+        var e = Event.current;
+        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F8)
+        {
+            _visible = !_visible;
             e.Use();
         }
 
-        if (!InMenus())
+        if (!_visible)
         {
             return;
         }
@@ -122,63 +82,39 @@ internal sealed class HaulnetRunner : MonoBehaviour
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
         _wrap ??= new GUIStyle(GUI.skin.label) { wordWrap = true };
 
-        const float width = 440f;
-        var x = Screen.width / scale - width - 16f;
-        var area = new Rect(x, 16f, width, Screen.height / scale - 32f);
-        GUILayout.BeginArea(area);
+        const float width = 460f;
+        GUILayout.BeginArea(new Rect(Screen.width / scale - width - 16f, 16f, width, Screen.height / scale - 32f));
         GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label($"{Text.Title} {Plugin.Version}   [F8]");
 
-        var mode = Plugin.Settings.Mode;
-        if (GUILayout.Button($"{Text.Title}: {ModeName(mode)}  {StatusSuffix(mode)}   [{Text.ToggleHint}]"))
-        {
-            _expanded = !_expanded;
-        }
-
-        if (_expanded)
-        {
-            DrawModeSelector(mode);
-            GUILayout.Space(6f);
-            switch (mode)
-            {
-                case ConnectionMode.Host:
-                    DrawHost();
-                    break;
-                case ConnectionMode.Join:
-                    DrawJoin();
-                    break;
-                default:
-                    GUILayout.Label(Text.CloudInfo, _wrap);
-                    break;
-            }
-        }
+        GUILayout.Label($"{Text.PanelSession} {DescribeNext()}", _wrap);
+        DrawServer();
+        DrawManualJoin();
 
         GUILayout.EndVertical();
         GUILayout.EndArea();
         GUI.matrix = Matrix4x4.identity;
     }
 
-    private void DrawModeSelector(ConnectionMode mode)
+    private static string DescribeNext()
     {
-        var locked = PhotonNetwork.InRoom;
-        GUI.enabled = !locked;
-        var names = new[] { Text.ModeCloud, Text.ModeHost, Text.ModeJoin };
-        var selected = GUILayout.Toolbar((int)mode, names);
-        GUI.enabled = true;
-        if (locked)
+        if (Session.HostingOnMyPc)
         {
-            GUILayout.Label(Text.LockedInRoom, _wrap);
+            return Text.SessionHost;
         }
-        else if (selected != (int)mode)
-        {
-            Plugin.Settings.Mode = (ConnectionMode)selected;
-        }
+
+        return Session.ManualAddress.HasValue ? Text.SessionManual(Session.ManualAddress.Value.ToString()) : Text.SessionCloud;
     }
 
-    private void DrawHost()
+    private void DrawServer()
     {
-        GUILayout.Label(Text.HostInfo, _wrap);
-
         var server = Plugin.Server;
+        if (!Session.HostingOnMyPc && server.State == ServerState.Stopped)
+        {
+            return;
+        }
+
+        GUILayout.Space(6f);
         switch (server.State)
         {
             case ServerState.Running:
@@ -188,7 +124,7 @@ internal sealed class HaulnetRunner : MonoBehaviour
                 GUILayout.Label(Text.ServerStarting);
                 break;
             case ServerState.Failed:
-                GUILayout.Label($"{Text.ServerFailed} {server.Error}", _wrap);
+                GUILayout.Label($"{Text.ServerError} {server.Error}", _wrap);
                 if (GUILayout.Button(Text.Retry))
                 {
                     server.Start();
@@ -197,11 +133,6 @@ internal sealed class HaulnetRunner : MonoBehaviour
                 break;
             default:
                 GUILayout.Label(Text.ServerStopped);
-                if (GUILayout.Button(Text.Retry))
-                {
-                    server.Start();
-                }
-
                 break;
         }
 
@@ -211,8 +142,7 @@ internal sealed class HaulnetRunner : MonoBehaviour
             _nextHintRefresh = DateTime.UtcNow + AddressRefresh;
         }
 
-        GUILayout.Space(6f);
-        GUILayout.Label(Text.FriendsUse, _wrap);
+        GUILayout.Label(Text.YourAddresses, _wrap);
         if (_hints.Count == 0)
         {
             GUILayout.Label(Text.NoAddresses, _wrap);
@@ -231,94 +161,35 @@ internal sealed class HaulnetRunner : MonoBehaviour
             GUILayout.EndHorizontal();
         }
 
-        GUILayout.Space(6f);
         GUILayout.Label(Text.FirewallNote, _wrap);
     }
 
-    private void DrawJoin()
+    private void DrawManualJoin()
     {
-        GUILayout.Label(Text.JoinInfo, _wrap);
-        GUILayout.Label(Text.AddressLabel);
-        GUI.enabled = !PhotonNetwork.InRoom;
+        GUILayout.Space(6f);
+        GUILayout.Label(Text.ManualJoin, _wrap);
         _addressDraft = GUILayout.TextField(_addressDraft, 100);
-        GUI.enabled = true;
-        if (_addressDraft.Trim() != Plugin.Settings.Address)
-        {
-            Plugin.Settings.Address = _addressDraft;
-        }
 
-        if (_addressDraft.Trim().Length > 0 && !ServerAddress.TryParse(_addressDraft, out _, out var error))
+        var valid = ServerAddress.TryParse(_addressDraft, out var address, out var error);
+        if (_addressDraft.Trim().Length > 0 && !valid)
         {
             GUILayout.Label($"{Text.AddressInvalid} {error}", _wrap);
         }
 
-        if (!Plugin.Settings.LanDiscovery)
+        GUILayout.BeginHorizontal();
+        GUI.enabled = valid;
+        if (GUILayout.Button(Text.Apply))
         {
-            return;
+            Session.SetManualAddress(address);
         }
 
-        GUILayout.Space(6f);
-        GUILayout.Label(Text.LanGames);
-        var hosts = _discovery.Hosts;
-        if (hosts.Count == 0)
+        GUI.enabled = Session.ManualAddress.HasValue;
+        if (GUILayout.Button(Text.Clear))
         {
-            GUILayout.Label(Text.LanNone, _wrap);
+            Session.SetManualAddress(null);
         }
 
-        foreach (var host in hosts)
-        {
-            GUILayout.BeginHorizontal();
-            var suffix = host.Compatible ? "" : " " + Text.Incompatible;
-            GUILayout.Label($"{host.Name} ({host.Address}){suffix}", _wrap, GUILayout.Width(330f));
-            GUI.enabled = host.Compatible && !PhotonNetwork.InRoom;
-            if (GUILayout.Button(Text.Use))
-            {
-                _addressDraft = host.Address.ToString();
-                Plugin.Settings.Address = _addressDraft;
-            }
-
-            GUI.enabled = true;
-            GUILayout.EndHorizontal();
-        }
-    }
-
-    private static string ModeName(ConnectionMode mode) => mode switch
-    {
-        ConnectionMode.Host => Text.ModeHost,
-        ConnectionMode.Join => Text.ModeJoin,
-        _ => Text.ModeCloud,
-    };
-
-    private static string StatusSuffix(ConnectionMode mode)
-    {
-        if (mode == ConnectionMode.Host)
-        {
-            return Plugin.Server.State switch
-            {
-                ServerState.Running => "(server running)",
-                ServerState.Starting => "(server starting)",
-                ServerState.Failed => "(server error)",
-                _ => "(server stopped)",
-            };
-        }
-
-        return mode == ConnectionMode.Join && Plugin.Settings.Address.Length > 0 ? $"({Plugin.Settings.Address})" : "";
-    }
-
-    private static string PlayerName()
-    {
-        try
-        {
-            var name = Steamworks.SteamClient.Name;
-            if (!string.IsNullOrEmpty(name))
-            {
-                return name;
-            }
-        }
-        catch (Exception)
-        {
-        }
-
-        return Environment.UserName;
+        GUI.enabled = true;
+        GUILayout.EndHorizontal();
     }
 }

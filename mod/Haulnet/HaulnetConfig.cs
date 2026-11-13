@@ -1,77 +1,40 @@
-using System;
 using BepInEx.Configuration;
 
 namespace Haulnet;
 
-public enum ConnectionMode
-{
-    /// <summary>Unmodded behaviour: Photon Cloud.</summary>
-    Cloud,
-
-    /// <summary>Run the server inside this game; friends join this PC.</summary>
-    Host,
-
-    /// <summary>Connect to a Haulnet host or a dedicated server at <see cref="HaulnetConfig.Address"/>.</summary>
-    Join,
-}
-
 /// <summary>
-/// Player settings, stored in BepInEx/config/haulnet.repo.cfg.
-/// Read on every connect, so changes made in game, in the file or by a config manager apply to the next connection.
+/// Player settings, stored in BepInEx/config/haulnet.repo.cfg. There is no global mode: where a game is
+/// hosted is chosen per game, and joining follows the Steam invite (see <see cref="Session"/>).
 /// </summary>
 internal sealed class HaulnetConfig
 {
-    private readonly ConfigEntry<ConnectionMode> _mode;
-    private readonly ConfigEntry<string> _address;
-    private readonly ConfigEntry<bool> _lanDiscovery;
+    private readonly ConfigEntry<bool> _lastChoiceMyPc;
+    private readonly ConfigEntry<string> _lastManualAddress;
 
     public HaulnetConfig(ConfigFile config)
     {
-        _mode = config.Bind(
-            "Connection",
-            "Mode",
-            ConnectionMode.Cloud,
-            "Cloud: play through Photon Cloud, as without the mod.\n" +
-            "Host: run the server inside your game; friends join your PC.\n" +
-            "Join: connect to the server at Address (a Haulnet host or a dedicated LuxonServer).");
+        _lastChoiceMyPc = config.Bind(
+            "Hosting",
+            "LastChoiceOnMyPc",
+            false,
+            "Remembers the last answer to \"Where to host?\" so it is offered first next time.");
 
-        _address = config.Bind(
+        _lastManualAddress = config.Bind(
             "Connection",
-            "Address",
+            "LastManualAddress",
             "",
-            "Host address used in Join mode: IP or host name, optionally with the NameServer port.\n" +
-            "Examples: 192.168.1.20, 10.8.0.2:27000, [fd00::2]:27000, myserver.example.org");
-
-        _lanDiscovery = config.Bind(
-            "Connection",
-            "LanDiscovery",
-            true,
-            "Host: announce the game on the local network. Join: list games announced on the local network.");
-
-        _mode.SettingChanged += (_, _) => ModeChanged?.Invoke();
+            "Last server address entered in the Haulnet panel (F8).");
     }
 
-    /// <summary>Raised when the mode changes, from the in-game menu or a config manager.</summary>
-    public event Action? ModeChanged;
-
-    public ConnectionMode Mode
+    public bool LastChoiceOnMyPc
     {
-        get => _mode.Value;
-        set => _mode.Value = value;
+        get => _lastChoiceMyPc.Value;
+        set => _lastChoiceMyPc.Value = value;
     }
 
-    public string Address
+    public string LastManualAddress
     {
-        get => _address.Value?.Trim() ?? "";
-        set => _address.Value = value?.Trim() ?? "";
+        get => _lastManualAddress.Value?.Trim() ?? "";
+        set => _lastManualAddress.Value = value?.Trim() ?? "";
     }
-
-    public bool LanDiscovery => _lanDiscovery.Value;
-
-    public string Describe() => Mode switch
-    {
-        ConnectionMode.Join => $"Mode: Join, address: '{Address}'.",
-        ConnectionMode.Host => "Mode: Host (server runs inside this game).",
-        _ => "Mode: Cloud (Photon Cloud, unmodded behaviour).",
-    };
 }

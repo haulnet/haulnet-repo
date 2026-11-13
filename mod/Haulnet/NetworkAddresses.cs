@@ -29,7 +29,7 @@ internal sealed class AddressHint
     public string Label { get; }
     public IPAddress Address { get; }
 
-    /// <summary>Text a friend types into Join (IPv6 in brackets).</summary>
+    /// <summary>Address as text (IPv6 in brackets).</summary>
     public string Text => Address.AddressFamily == AddressFamily.InterNetworkV6 ? $"[{Address}]" : Address.ToString();
 }
 
@@ -100,7 +100,7 @@ internal static class NetworkAddresses
                     // A VPN adapter's IPv6 addresses are usually internal duplicates; prefer IPv4.
                     if (ip.AddressFamily == AddressFamily.InterNetwork)
                     {
-                        result.Add(new AddressHint(AddressKind.Vpn, $"VPN ({nic.Name})", ip));
+                        result.Add(new AddressHint(AddressKind.Vpn, Text.LabelVpn(nic.Name), ip));
                     }
 
                     continue;
@@ -114,12 +114,12 @@ internal static class NetworkAddresses
                     }
 
                     result.Add(IsPrivateV4(ip)
-                        ? new AddressHint(AddressKind.Lan, $"Local network ({nic.Name})", ip)
-                        : new AddressHint(AddressKind.Public, "Public, needs open UDP ports 27000-27002", ip));
+                        ? new AddressHint(AddressKind.Lan, Text.LabelLan(nic.Name), ip)
+                        : new AddressHint(AddressKind.Public, Text.LabelPublic, ip));
                 }
                 else if (ip.AddressFamily == AddressFamily.InterNetworkV6 && IsGlobalV6(ip))
                 {
-                    result.Add(new AddressHint(AddressKind.IPv6, "IPv6, if your friend also has IPv6", ip));
+                    result.Add(new AddressHint(AddressKind.IPv6, Text.LabelIPv6, ip));
                 }
             }
         }
@@ -129,55 +129,6 @@ internal static class NetworkAddresses
         result.RemoveAll(h => h.Kind == AddressKind.IPv6 && !ReferenceEquals(h, firstV6));
 
         return result.OrderBy(h => h.Kind).ToList();
-    }
-
-    /// <summary>Broadcast addresses of this PC's IPv4 networks, for LAN discovery.</summary>
-    public static List<IPAddress> BroadcastAddresses()
-    {
-        var result = new List<IPAddress> { IPAddress.Broadcast };
-        try
-        {
-            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
-                {
-                    continue;
-                }
-
-                foreach (var unicast in nic.GetIPProperties().UnicastAddresses)
-                {
-                    if (unicast.Address.AddressFamily != AddressFamily.InterNetwork || unicast.IPv4Mask == null)
-                    {
-                        continue;
-                    }
-
-                    var ip = unicast.Address.GetAddressBytes();
-                    var mask = unicast.IPv4Mask.GetAddressBytes();
-                    if (mask.All(b => b == 0))
-                    {
-                        continue;
-                    }
-
-                    var broadcast = new byte[4];
-                    for (var i = 0; i < 4; i++)
-                    {
-                        broadcast[i] = (byte)(ip[i] | ~mask[i]);
-                    }
-
-                    var address = new IPAddress(broadcast);
-                    if (!result.Contains(address))
-                    {
-                        result.Add(address);
-                    }
-                }
-            }
-        }
-        catch (Exception)
-        {
-            // Mono may not expose masks on every platform; the limited broadcast still works on a LAN.
-        }
-
-        return result;
     }
 
     private static bool IsPrivateV4(IPAddress ip)
