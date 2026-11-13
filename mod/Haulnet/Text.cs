@@ -37,6 +37,13 @@ internal static class Text
     public static string Checking => T("checking...", "проверка...");
     public static string NoPing => "—";
     public static string Ms => T("ms", "мс");
+    public static string RowThisPc(string name) => name.Length > 0
+        ? T($"This PC · {name}", $"Этот ПК · {name}")
+        : T("This PC · haulnet-server", "Этот ПК · haulnet-server");
+    public static string NoServerHeader => T("NO SERVER", "НЕТ СЕРВЕРА");
+    public static string NoServerBody(string city) => T(
+        $"No server in {city} answers its status check, accepts new games and runs a compatible version.",
+        $"В {city} нет сервера, который отвечает на проверку статуса, принимает новые игры и работает на совместимой версии.");
 
     // Server by address
     public static string AddressHeader => T("SERVER BY ADDRESS", "СЕРВЕР ПО АДРЕСУ");
