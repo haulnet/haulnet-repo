@@ -49,6 +49,8 @@ internal static class Text
     public static string AddressHeader => T("SERVER BY ADDRESS", "СЕРВЕР ПО АДРЕСУ");
     public static string AddressBody => T("SERVER ADDRESS", "АДРЕС СЕРВЕРА");
     public static string Connect => T("CONNECT", "ПОДКЛЮЧИТЬСЯ");
+    // Fallback only: the text popups normally use the game's own localized "Back" (WherePage.LocalizePopupBack).
+    public static string Back => T("Back", "Назад");
     public static string AddressInvalidHeader => T("WRONG ADDRESS", "НЕВЕРНЫЙ АДРЕС");
     public static string AddressInvalidBody(string text, string error) => T(
         $"\"{text}\" is not a server address ({error}).\nUse host or host:port, for example play.example.org or 203.0.113.5:27100.",
