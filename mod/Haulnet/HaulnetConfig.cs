@@ -51,7 +51,7 @@ internal sealed class HaulnetConfig
             "",
             "Public server list shown on the region page. Empty uses the Haulnet list (" + DefaultRegistryUrl +
             "). A community can point it to its own list in the same format (haulnet-servers, schema v1); " +
-            "http(s):// or file:///.");
+            "https://, file:/// or, for a list on this PC only, http://localhost (the game refuses plain http:// to other hosts).");
         if (IsBuiltInUrl(_registryUrl.Value))
         {
             _registryUrl.Value = "";
