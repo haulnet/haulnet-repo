@@ -43,12 +43,19 @@ internal sealed class HaulnetConfig
             "",
             "Last address typed in \"Server by address\".");
 
+        // Empty means "the built-in list". BepInEx keeps whatever value is stored in the file, so storing the
+        // built-in URL there would pin every install to it and a later move of the list would never reach players.
         _registryUrl = config.Bind(
             "Servers",
             "RegistryUrl",
-            DefaultRegistryUrl,
-            "Public server list shown on the region page. A community can point it to its own list in the same " +
-            "format (haulnet-servers, schema v1); http(s):// or file:///.");
+            "",
+            "Public server list shown on the region page. Empty uses the Haulnet list (" + DefaultRegistryUrl +
+            "). A community can point it to its own list in the same format (haulnet-servers, schema v1); " +
+            "http(s):// or file:///.");
+        if (IsBuiltInUrl(_registryUrl.Value))
+        {
+            _registryUrl.Value = "";
+        }
 
         _lastTab = config.Bind(
             "Servers",
@@ -57,7 +64,32 @@ internal sealed class HaulnetConfig
             "Region page tab opened last: haulnet or photon.");
     }
 
-    public const string DefaultRegistryUrl = "https://haulnet.github.io/haulnet-servers/v1/servers.json";
+    public const string DefaultRegistryUrl = "https://servers.haulnet.cc/v1/servers.json";
+
+    /// <summary>Earlier built-in addresses that test builds wrote into config files; treated as "not set".</summary>
+    private static readonly string[] FormerRegistryUrls =
+    {
+        "https://haulnet.github.io/haulnet-servers/v1/servers.json",
+    };
+
+    private static bool IsBuiltInUrl(string? value)
+    {
+        var url = (value ?? "").Trim();
+        if (url.Equals(DefaultRegistryUrl, System.StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        foreach (var former in FormerRegistryUrls)
+        {
+            if (url.Equals(former, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private readonly ConfigEntry<string> _registryUrl;
     private readonly ConfigEntry<string> _lastTab;
