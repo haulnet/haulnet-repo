@@ -41,8 +41,11 @@ internal static class WherePage
     private const float RowStep = 32f;
     private const float CheckTimeoutSeconds = 6f;
 
-    // A server within this many ms of the best one in its city counts as "as close" when balancing private games.
-    private const int SamePingMs = 15;
+    // How long finished checks wait for the monitor's uptime before they are shown without it.
+    private const float StabilityWaitSeconds = 2f;
+
+    // Rows just moved: a click in this window may have been aimed at the row that was there before.
+    private const float ReorderClickGuardSeconds = 0.5f;
 
     private static readonly Color PingGood = new(0.2f, 0.8f, 0.2f);
     private static readonly Color PingFair = new(0.8f, 0.8f, 0.2f);
@@ -79,6 +82,10 @@ internal static class WherePage
     private static string _draft = "";
     private static bool _continuing;
     private static bool _busy;
+    private static float _reorderedAt = float.NegativeInfinity;
+
+    // Position of each city in the last ranking of this game session: the next opening starts in that order.
+    private static readonly Dictionary<string, int> LastCityRank = new(StringComparer.Ordinal);
 
     /// <summary>False when the game's region page changed and Haulnet cannot offer its places to play.</summary>
     public static bool Available { get; private set; }
@@ -240,10 +247,16 @@ internal static class WherePage
         }
 
         var registryAddresses = new List<ServerAddress>();
-        foreach (var city in Registry.Cities)
+        var cities = Registry.Cities
+            .Select((city, index) => (city, index))
+            .OrderBy(x => LastCityRank.TryGetValue(x.city.Id, out var rank) ? rank : int.MaxValue)
+            .ThenBy(x => x.index)
+            .Select(x => x.city);
+        foreach (var city in cities)
         {
             var row = new Row(city.DisplayName, null, city);
             row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, city.DisplayName, Text.Checking, Grey);
+            row.Place = ((RectTransform)row.Element.transform).anchoredPosition;
             Rows.Add(row);
             elements.Add(row.Element);
             registryAddresses.AddRange(city.Servers.Select(s => s.Address));
@@ -279,6 +292,7 @@ internal static class WherePage
             }
         }
 
+        Plugin.Runner.StartCoroutine(Registry.RefreshStability());
         Plugin.Runner.StartCoroutine(CheckRows(Rows.Where(r => r.Status == null).ToList(), IsHostFlow(page)));
         Plugin.Log.LogInfo($"Region page: {elements.Count} Haulnet row(s): {Registry.Cities.Count} city(ies), {(local != null ? "a" : "no")} local haulnet-server.");
     }
@@ -527,10 +541,13 @@ internal static class WherePage
                 : new List<Task<ServerStatus>> { ServerCheck.RunAsync(row.Address!.Value) };
         }
 
-        var deadline = Time.realtimeSinceStartup + CheckTimeoutSeconds;
+        var started = Time.realtimeSinceStartup;
+        var deadline = started + CheckTimeoutSeconds;
         while (rows.Any(r => !r.Shown) && Time.realtimeSinceStartup < deadline)
         {
-            foreach (var row in rows.Where(r => !r.Shown && r.Checks!.All(c => c.IsCompleted)))
+            // A city's choice depends on the monitor's uptime; wait for it a little so a shown choice stays.
+            var stabilityReady = Registry.StabilitySettled || Time.realtimeSinceStartup >= started + StabilityWaitSeconds;
+            foreach (var row in rows.Where(r => !r.Shown && r.Checks!.All(c => c.IsCompleted) && (r.City == null || stabilityReady)))
             {
                 row.Shown = true;
                 if (row.Element == null)
@@ -567,6 +584,65 @@ internal static class WherePage
                 row.Element.textPing.color = Grey;
             }
         }
+
+        var servers = rows.Sum(r => r.Checks!.Count);
+        var answered = rows.Sum(r => r.Checks!.Count(c => c.IsCompleted && !c.IsFaulted && c.Result.HasStatus));
+        Plugin.Log.LogInfo($"Region page: {servers} server check(s) in {(Time.realtimeSinceStartup - started) * 1000:F0} ms, {answered} answered.");
+        try
+        {
+            ReorderCities(rows);
+        }
+        catch (Exception e)
+        {
+            // Game internals (MenuElementAnimations) changed: the rows keep the list's order and still work.
+            Plugin.Log.LogError($"Region page: could not order the cities ({e.Message}); they stay in the list's order.");
+        }
+    }
+
+    /// <summary>
+    /// Moves the city rows into ranking order once every city has its result (ADR 0024). The rows trade places;
+    /// their codes stay, so a click still reaches the right city.
+    /// </summary>
+    private static void ReorderCities(List<Row> rows)
+    {
+        var cityRows = rows.Where(r => r.City != null).ToList();
+        if (cityRows.Count == 0 || cityRows.Any(r => r.Element == null))
+        {
+            return; // Page closed or rows rebuilt meanwhile.
+        }
+
+        var order = ServerRanking.OrderCities(cityRows.Select(r => (r.Outcome, r.Score)).ToList());
+        LastCityRank.Clear();
+        for (var rank = 0; rank < order.Count; rank++)
+        {
+            LastCityRank[cityRows[order[rank]].City!.Id] = rank;
+        }
+
+        if (order.Select((cityIndex, rank) => cityIndex == rank).All(same => same))
+        {
+            return;
+        }
+
+        // The rows were placed top to bottom in this order; hand those places out in the new order. A row's
+        // MenuElementAnimations springs it to the place it read in its Start, so the new place is set on the row
+        // (for a row whose Start has not run yet: hidden tab) and given to the game's UIAniNewInitialPosition (for a
+        // row already started, which then slides there).
+        var places = cityRows.Select(r => r.Place).ToList();
+        for (var rank = 0; rank < order.Count; rank++)
+        {
+            var row = cityRows[order[rank]];
+            row.Place = places[rank];
+            ((RectTransform)row.Element.transform).anchoredPosition = row.Place;
+            var animations = row.Element.GetComponent<MenuElementAnimations>();
+            if (animations != null)
+            {
+                animations.UIAniNewInitialPosition(row.Place);
+            }
+        }
+
+        _reorderedAt = Time.realtimeSinceStartup;
+        Recalculate();
+        Plugin.Log.LogInfo("Region page: cities ranked " + string.Join(", ", order.Select(i => cityRows[i].City!.Id)) + ".");
     }
 
     /// <summary>
@@ -591,29 +667,22 @@ internal static class WherePage
             row.Status = null;
             // Only when every server says so: one that is down or incompatible keeps the general explanation.
             row.Updating = checks.All(x => x.status is { Updating: true });
+            row.Outcome = row.Updating ? CityOutcome.Updating : CityOutcome.None;
             Plugin.Log.LogInfo($"{row.City.DisplayName}: no usable server{(row.Updating ? " (all updating)" : "")}.");
             return;
         }
 
         row.Updating = false;
 
-        (RegistryServer server, ServerStatus? status) chosen;
-        if (hostFlow)
-        {
-            var best = usable.Min(x => Ping(x.status!));
-            chosen = usable.Where(x => Ping(x.status!) <= best + SamePingMs).OrderBy(x => x.status!.Players).ThenBy(x => Ping(x.status!)).First();
-        }
-        else
-        {
-            chosen = usable.OrderByDescending(x => x.status!.Players).ThenBy(x => Ping(x.status!)).First();
-        }
-
+        var ranked = usable.Select(x => new RankedServer(x.status!.PingMs, Registry.PenaltyOf(x.server.Id), x.status.Players)).ToList();
+        var index = ServerRanking.Choose(ranked, hostFlow);
+        var chosen = usable[index];
         row.Chosen = chosen.server;
         row.Status = chosen.status;
-        Plugin.Log.LogInfo($"{row.City.DisplayName}: {usable.Count} usable server(s), chose {chosen.server.Id} ({chosen.status!.Players} players, {chosen.status.PingMs} ms).");
+        row.Outcome = CityOutcome.Usable;
+        row.Score = ranked[index].Score;
+        Plugin.Log.LogInfo($"{row.City.DisplayName}: {usable.Count} usable server(s), chose {chosen.server.Id} ({chosen.status!.Players} players, {chosen.status.PingMs} ms, stability penalty {ranked[index].PenaltyMs} ms).");
     }
-
-    private static int Ping(ServerStatus status) => status.PingMs >= 0 ? status.PingMs : int.MaxValue / 2;
 
     private static void ShowStatus(Row row)
     {
@@ -723,9 +792,9 @@ internal static class WherePage
         var row = Rows[index];
         if (row.City != null)
         {
-            if (!row.Shown)
+            if (!row.Shown || Time.realtimeSinceStartup - _reorderedAt < ReorderClickGuardSeconds)
             {
-                return; // Still checking its servers.
+                return; // Still checking its servers, or the rows just moved under the pointer.
             }
 
             if (row.Chosen == null)
@@ -1065,6 +1134,15 @@ internal static class WherePage
 
         /// <summary>The server of the city this game would go to.</summary>
         public RegistryServer? Chosen { get; set; }
+
+        /// <summary>City row: what the check found, for the ranking.</summary>
+        public CityOutcome Outcome { get; set; } = CityOutcome.None;
+
+        /// <summary>City row: score of the chosen server (ping plus stability penalty).</summary>
+        public int Score { get; set; }
+
+        /// <summary>City row: its place in the list (anchored position), handed to another city when ranked.</summary>
+        public Vector2 Place { get; set; }
 
         public bool Shown { get; set; }
     }

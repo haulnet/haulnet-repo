@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Haulnet;
@@ -22,8 +23,14 @@ internal static class ServerCheck
     private const int TimeoutMs = 1500;
     private const int MaxStatusBytes = 64 * 1024;
 
+    /// <summary>
+    /// Each check gets its own thread (LongRunning), not a thread-pool worker: a check blocks for up to a few
+    /// seconds, and the region page starts one per listed server at once. On the pool, a hundred blocking checks
+    /// starve it, and with it the completions of Mono's asynchronous socket calls, which also run on the pool.
+    /// </summary>
     public static Task<ServerStatus> RunAsync(ServerAddress address, int statusPort = StatusPort) =>
-        Task.Run(() => Run(address, statusPort));
+        Task.Factory.StartNew(() => Run(address, statusPort), CancellationToken.None,
+            TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
     private static ServerStatus Run(ServerAddress address, int statusPort)
     {
@@ -62,23 +69,72 @@ internal static class ServerCheck
                ?? addresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetworkV6);
     }
 
+    /// <summary>
+    /// Best of two ICMP round trips, timed here around the whole call. Mono's <c>Ping.Send</c> starts its own clock
+    /// only after sending, so a pause right after the send (garbage collection, a hundred checks starting at once)
+    /// made a 117 ms server read as 1 ms; timed outside, a pause can only make it look slower, and the second try
+    /// absorbs a single pause. The ranking orders servers by this value.
+    /// </summary>
     private static int Ping(IPAddress ip)
     {
-        try
+        var best = -1;
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            using var ping = new Ping();
-            var reply = ping.Send(ip, TimeoutMs);
-            if (reply != null && reply.Status == IPStatus.Success)
+            try
             {
-                return (int)Math.Max(1, reply.RoundtripTime);
+                using var ping = new Ping();
+                var stopwatch = Stopwatch.StartNew();
+                var reply = ping.Send(ip, TimeoutMs);
+                var ms = (int)Math.Max(1, stopwatch.ElapsedMilliseconds);
+                if (reply == null || reply.Status != IPStatus.Success)
+                {
+                    break; // No answer: a second try would only cost another timeout.
+                }
+
+                best = best < 0 ? ms : Math.Min(best, ms);
+            }
+            catch (Exception)
+            {
+                // ICMP may be unavailable or blocked; the status endpoint's connect time is the fallback.
+                break;
             }
         }
-        catch (Exception)
+
+        return best;
+    }
+
+    /// <summary>
+    /// Connects within <see cref="TimeoutMs"/> without <c>BeginConnect</c>: in Mono its completion is a thread-pool
+    /// work item (<c>IOSelectorJob</c>), so waiting on it from a busy pool can time out although the server answered.
+    /// A non-blocking connect and <c>Poll</c> wait on the socket itself.
+    /// </summary>
+    private static bool Connect(Socket socket, IPEndPoint endPoint)
+    {
+        socket.Blocking = false;
+        try
         {
-            // ICMP may be unavailable or blocked; the status endpoint's connect time is the fallback.
+            socket.Connect(endPoint);
+        }
+        catch (SocketException e) when (e.SocketErrorCode is SocketError.WouldBlock or SocketError.InProgress)
+        {
+            // Windows reports a refused connect as an error condition, not as writable: check both, in slices.
+            var waited = Stopwatch.StartNew();
+            while (!socket.Poll(20_000, SelectMode.SelectWrite))
+            {
+                if (socket.Poll(0, SelectMode.SelectError) || waited.ElapsedMilliseconds >= TimeoutMs)
+                {
+                    return false;
+                }
+            }
+
+            if ((int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error)! != 0)
+            {
+                return false;
+            }
         }
 
-        return -1;
+        socket.Blocking = true;
+        return socket.Connected;
     }
 
     /// <summary>Plain HTTP/1.0 over a socket: no TLS, no redirects, bounded size and time.</summary>
@@ -88,13 +144,12 @@ internal static class ServerCheck
         {
             using var client = new TcpClient(ip.AddressFamily);
             var stopwatch = Stopwatch.StartNew();
-            var connect = client.BeginConnect(ip, statusPort, null, null);
-            if (!connect.AsyncWaitHandle.WaitOne(TimeoutMs) || !client.Connected)
+            if (!Connect(client.Client, new IPEndPoint(ip, statusPort)))
             {
+                Plugin.Log.LogDebug($"Server {address}: status port {statusPort} not reached after {stopwatch.ElapsedMilliseconds} ms.");
                 return;
             }
 
-            client.EndConnect(connect);
             var connectMs = (int)Math.Max(1, stopwatch.ElapsedMilliseconds);
             if (status.PingMs < 0)
             {
