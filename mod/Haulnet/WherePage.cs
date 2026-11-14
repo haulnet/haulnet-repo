@@ -569,8 +569,10 @@ internal static class WherePage
     private static void PickCityServer(Row row, bool hostFlow)
     {
         var compatible = Registry.CompatibleLuxon;
-        var usable = row.City!.Servers
+        var checks = row.City!.Servers
             .Select((server, i) => (server, status: row.Checks![i].IsCompleted && !row.Checks[i].IsFaulted ? row.Checks[i].Result : null))
+            .ToList();
+        var usable = checks
             .Where(x => x.status is { HasStatus: true, Accepting: true }
                         && (compatible.Count == 0 || compatible.Contains(x.status.Luxon)))
             .ToList();
@@ -579,9 +581,13 @@ internal static class WherePage
         {
             row.Chosen = null;
             row.Status = null;
-            Plugin.Log.LogInfo($"{row.City.DisplayName}: no usable server.");
+            // Only when every server says so: one that is down or incompatible keeps the general explanation.
+            row.Updating = checks.All(x => x.status is { Updating: true });
+            Plugin.Log.LogInfo($"{row.City.DisplayName}: no usable server{(row.Updating ? " (all updating)" : "")}.");
             return;
         }
+
+        row.Updating = false;
 
         (RegistryServer server, ServerStatus? status) chosen;
         if (hostFlow)
@@ -605,6 +611,13 @@ internal static class WherePage
     {
         var status = row.Status;
         var ping = row.Element.textPing;
+        if (row.City != null && row.Updating)
+        {
+            ping.text = Text.HintUpdating;
+            ping.color = PingBad;
+            return;
+        }
+
         if (status == null || !status.Resolved)
         {
             ping.text = Text.NoPing;
@@ -619,7 +632,7 @@ internal static class WherePage
 
         if (status.HasStatus && !status.Accepting)
         {
-            ping.text = Text.HintFull;
+            ping.text = status.Updating ? Text.HintUpdating : Text.HintFull;
             ping.color = PingBad;
             return;
         }
@@ -709,7 +722,15 @@ internal static class WherePage
 
             if (row.Chosen == null)
             {
-                Popups.ShowNow(Text.NoServerHeader, Text.NoServerBody(row.City.DisplayName));
+                if (row.Updating)
+                {
+                    Popups.ShowNow(Text.UpdatingHeader, Text.UpdatingBody(row.City.DisplayName));
+                }
+                else
+                {
+                    Popups.ShowNow(Text.NoServerHeader, Text.NoServerBody(row.City.DisplayName));
+                }
+
                 return;
             }
 
@@ -720,13 +741,26 @@ internal static class WherePage
 
         if (row.Status is { HasStatus: true, Accepting: false })
         {
-            Popups.ShowNow(Text.FullHeader, Text.FullBody(row.Address!.Value.Display));
+            ShowNotAccepting(row.Status, row.Address!.Value.Display);
             return;
         }
 
         var name = row.SavedName.Length > 0 ? row.SavedName : row.Status?.Name ?? "";
         Session.ChooseServer(row.Address!.Value, name);
         Continue(page);
+    }
+
+    /// <summary>A server that is about to update reads like an outage under the "full" message, so it gets its own.</summary>
+    private static void ShowNotAccepting(ServerStatus status, string server)
+    {
+        if (status.Updating)
+        {
+            Popups.ShowNow(Text.UpdatingHeader, Text.UpdatingBody(server));
+        }
+        else
+        {
+            Popups.ShowNow(Text.FullHeader, Text.FullBody(server));
+        }
     }
 
     /// <summary>
@@ -956,7 +990,7 @@ internal static class WherePage
 
         if (status is { HasStatus: true, Accepting: false })
         {
-            Popups.ShowNow(Text.FullHeader, Text.FullBody(address.Display));
+            ShowNotAccepting(status, address.Display);
             yield break;
         }
 
@@ -1017,6 +1051,9 @@ internal static class WherePage
         public MenuElementRegion Element { get; set; } = null!;
         public List<Task<ServerStatus>>? Checks { get; set; }
         public ServerStatus? Status { get; set; }
+
+        /// <summary>City row without a usable server because every one of its servers is about to update.</summary>
+        public bool Updating { get; set; }
 
         /// <summary>The server of the city this game would go to.</summary>
         public RegistryServer? Chosen { get; set; }

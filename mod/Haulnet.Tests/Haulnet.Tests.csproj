@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Checks that do not need the game (AGENTS.md): the translation loader and the translation files. -->
+  <!-- Checks that do not need the game (AGENTS.md): the translation loader, the translation files and the
+       haulnet-server status parser. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -13,6 +14,7 @@
 
   <ItemGroup>
     <Compile Include="..\Haulnet\Translations.cs" Link="Translations.cs" />
+    <Compile Include="..\Haulnet\ServerStatus.cs" Link="ServerStatus.cs" />
     <None Include="..\Haulnet\Localization\*.tsv" Link="Localization\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

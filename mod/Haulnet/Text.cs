@@ -68,6 +68,7 @@ internal static class Text
     public static string RowOnMyPc => Get("ROW.ON_MY_PC");
     public static string RowByAddress => Get("ROW.BY_ADDRESS");
     public static string HintFull => Get("ROW.FULL");
+    public static string HintUpdating => Get("ROW.UPDATING");
     public static string Checking => Get("ROW.CHECKING");
     public static string Ping(string ms) => Get("ROW.PING", ("ping", ms));
     public static string RowThisPc(string name) => Get("ROW.THIS_PC", ("name", name.Length > 0 ? name : "haulnet-server"));
@@ -87,6 +88,8 @@ internal static class Text
     public static string NotFoundBody(string host) => Get("NOT_FOUND.BODY", ("host", host));
     public static string FullHeader => Get("FULL.HEADER");
     public static string FullBody(string server) => Get("FULL.BODY", ("server", server));
+    public static string UpdatingHeader => Get("UPDATING.HEADER");
+    public static string UpdatingBody(string server) => Get("UPDATING.BODY", ("server", server));
 
     private static string AddressReason(AddressError error) => error.Problem switch
     {

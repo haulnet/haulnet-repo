@@ -5,28 +5,9 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Haulnet;
-
-/// <summary>What a quick look at a server found. Every field is optional except <see cref="Resolved"/>.</summary>
-internal sealed class ServerStatus
-{
-    public bool Resolved { get; set; }
-
-    /// <summary>Round trip in ms (ICMP ping, or the TCP connect to the status endpoint), or -1.</summary>
-    public int PingMs { get; set; } = -1;
-
-    /// <summary>The haulnet-server status endpoint answered with 200.</summary>
-    public bool HasStatus { get; set; }
-
-    public string Name { get; set; } = "";
-    public string Luxon { get; set; } = "";
-    public bool Accepting { get; set; } = true;
-    public int Players { get; set; }
-    public int Rooms { get; set; }
-}
 
 /// <summary>
 /// Looks at a server before and while it is listed: resolves the name, measures the round trip and reads the
@@ -140,30 +121,18 @@ internal static class ServerCheck
                 return;
             }
 
-            var body = response.Substring(bodyStart + 4);
+            var parsed = ServerStatus.Parse(response.Substring(bodyStart + 4));
             status.HasStatus = true;
-            status.Name = KnownServers.CleanName(JsonString(body, "name"));
-            status.Luxon = JsonString(body, "luxon");
-            status.Accepting = !Regex.IsMatch(body, "\"accepting\"\\s*:\\s*false");
-            status.Players = JsonInt(body, "players");
-            status.Rooms = JsonInt(body, "rooms");
+            status.Name = KnownServers.CleanName(parsed.Name);
+            status.Luxon = parsed.Luxon;
+            status.Accepting = parsed.Accepting;
+            status.Draining = parsed.Draining;
+            status.Players = parsed.Players;
+            status.Rooms = parsed.Rooms;
         }
         catch (Exception e)
         {
             Plugin.Log.LogDebug($"Server {address}: no status endpoint ({e.Message}).");
         }
-    }
-
-    // The status object is flat and its fields are fixed (haulnet-server contract); a full JSON parser is not needed.
-    private static string JsonString(string json, string key)
-    {
-        var match = Regex.Match(json, "\"" + key + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
-        return match.Success ? Regex.Unescape(match.Groups[1].Value) : "";
-    }
-
-    private static int JsonInt(string json, string key)
-    {
-        var match = Regex.Match(json, "\"" + key + "\"\\s*:\\s*(\\d{1,9})");
-        return match.Success ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : 0;
     }
 }

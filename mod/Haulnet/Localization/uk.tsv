@@ -5,6 +5,7 @@ ROW.ON_MY_PC	На моєму ПК
 ROW.BY_ADDRESS	+ Сервер за адресою...
 ROW.THIS_PC	Цей ПК · {name}
 ROW.FULL	заповнений
+ROW.UPDATING	оновлення
 ROW.CHECKING	перевірка...
 ROW.PING	{ping} мс
 
@@ -21,6 +22,7 @@ NO_SERVER.HEADER	НЕМАЄ СЕРВЕРА
 ADDRESS_INVALID.HEADER	НЕПРАВИЛЬНА АДРЕСА
 NOT_FOUND.HEADER	СЕРВЕР НЕ ЗНАЙДЕНО
 FULL.HEADER	СЕРВЕР ЗАПОВНЕНИЙ
+UPDATING.HEADER	СЕРВЕР ОНОВЛЮЄТЬСЯ
 NO_ANSWER.HEADER	HAULNET: НЕМАЄ ПІДКЛЮЧЕННЯ
 SERVER_FAILED.HEADER	HAULNET: ПОМИЛКА СЕРВЕРА
 PORT_INVALID.HEADER	НЕПРАВИЛЬНИЙ ПОРТ
@@ -39,6 +41,7 @@ ADDRESS_ERROR.INVALID_PORT	неприпустимий порт «{value}»
 ADDRESS_ERROR.INVALID_IPV6	неприпустима IPv6-адреса «{value}»
 NOT_FOUND.BODY	Ім'я {host} не знаходиться в DNS.
 FULL.BODY	{server} не приймає нові ігри (статус сервера: accepting: false).
+UPDATING.BODY	{server}: сервер оновлюється і поки не починає нові ігри. Спробуй за кілька хвилин.
 NO_ANSWER.BODY	Немає відповіді від {server} по UDP {port}.
 SERVER_FAILED.BODY	Не вдалося запустити сервер на твоєму ПК.\n\n{reason}
 SERVER_ERROR.FILE_MISSING	Немає файлу сервера: {path}. Перевстанови Haulnet.

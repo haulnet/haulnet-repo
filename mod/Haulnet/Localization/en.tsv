@@ -10,6 +10,7 @@ ROW.BY_ADDRESS	+ Server by address...
 ROW.THIS_PC	This PC · {name}
 #@max 12
 ROW.FULL	full
+ROW.UPDATING	updating
 ROW.CHECKING	checking...
 ROW.PING	{ping} ms
 
@@ -32,6 +33,7 @@ NO_SERVER.HEADER	NO SERVER
 ADDRESS_INVALID.HEADER	WRONG ADDRESS
 NOT_FOUND.HEADER	SERVER NOT FOUND
 FULL.HEADER	SERVER IS FULL
+UPDATING.HEADER	SERVER IS UPDATING
 NO_ANSWER.HEADER	HAULNET: NO CONNECTION
 SERVER_FAILED.HEADER	HAULNET: SERVER ERROR
 PORT_INVALID.HEADER	WRONG PORT
@@ -54,6 +56,8 @@ ADDRESS_ERROR.INVALID_PORT	invalid port '{value}'
 ADDRESS_ERROR.INVALID_IPV6	invalid IPv6 address '{value}'
 NOT_FOUND.BODY	The name {host} does not resolve to an address.
 FULL.BODY	{server} does not accept new games (its status says accepting: false).
+# {server} is a city name or a server address: keep it outside the sentence (no grammatical case).
+UPDATING.BODY	{server}: the server is updating and starts no new games until it is done. Try again in a few minutes.
 NO_ANSWER.BODY	No answer from {server} on UDP {port}.
 # {reason} is one of the SERVER_ERROR texts below.
 SERVER_FAILED.BODY	The server on your PC could not start.\n\n{reason}
