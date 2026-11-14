@@ -43,7 +43,7 @@ internal sealed class HostServer
 
     private Process? _process;
     private volatile ServerState _state = ServerState.Stopped;
-    private volatile string _error = "";
+    private volatile ServerError _error = ServerError.None;
 
     public HostServer(string pluginDir, string workDir)
     {
@@ -53,8 +53,8 @@ internal sealed class HostServer
 
     public ServerState State => _state;
 
-    /// <summary>Human-readable reason when <see cref="State"/> is <see cref="ServerState.Failed"/>.</summary>
-    public string Error => _error;
+    /// <summary>Why <see cref="State"/> is <see cref="ServerState.Failed"/>; shown through Text, logged in English.</summary>
+    public ServerError Error => _error;
 
     /// <summary>NameServer port of the running (or last started) server.</summary>
     public int BasePort => _ports[0];
@@ -76,14 +76,14 @@ internal sealed class HostServer
 
             if (!File.Exists(_executable))
             {
-                Fail($"Server file is missing: {_executable}. Reinstall Haulnet.");
+                Fail(new ServerError(ServerProblem.FileMissing, 0, _executable));
                 return;
             }
 
             var busy = FindBusyPort();
             if (busy != 0)
             {
-                Fail($"UDP port {busy} is already in use by another program.");
+                Fail(new ServerError(ServerProblem.PortInUse, busy, ""));
                 return;
             }
 
@@ -107,7 +107,7 @@ internal sealed class HostServer
                 process.Exited += (_, _) => OnExited(process);
 
                 _state = ServerState.Starting;
-                _error = "";
+                _error = ServerError.None;
                 process.Start();
                 JobObject.TryAssign(process);
                 process.BeginOutputReadLine();
@@ -117,7 +117,7 @@ internal sealed class HostServer
             }
             catch (Exception e)
             {
-                Fail($"Could not start the server: {e.Message}");
+                Fail(new ServerError(ServerProblem.StartFailed, 0, e.Message));
             }
         }
     }
@@ -140,7 +140,7 @@ internal sealed class HostServer
         {
             StopLocked();
             _state = ServerState.Stopped;
-            _error = "";
+            _error = ServerError.None;
         }
     }
 
@@ -236,14 +236,14 @@ internal sealed class HostServer
         {
         }
 
-        Fail($"The server stopped unexpectedly (exit code {code}). Last output: {tail}");
+        Fail(new ServerError(ServerProblem.Exited, code, tail));
     }
 
-    private void Fail(string message)
+    private void Fail(ServerError error)
     {
+        _error = error;
         _state = ServerState.Failed;
-        _error = message;
-        Plugin.Log.LogError(message);
+        Plugin.Log.LogError(error.ToString());
     }
 
     private int FindBusyPort()
@@ -315,4 +315,43 @@ internal sealed class HostServer
         sb.AppendLine("  enabled: false");
         return sb.ToString();
     }
+}
+
+internal enum ServerProblem
+{
+    None,
+    FileMissing,
+    PortInUse,
+    StartFailed,
+    Exited,
+}
+
+/// <summary>
+/// Why the bundled server failed. <see cref="Number"/> is the busy port or the exit code; <see cref="Detail"/> the
+/// missing path, the system's message or the server's last output (not translated).
+/// </summary>
+internal sealed class ServerError
+{
+    public static readonly ServerError None = new(ServerProblem.None, 0, "");
+
+    public ServerError(ServerProblem problem, int number, string detail)
+    {
+        Problem = problem;
+        Number = number;
+        Detail = detail;
+    }
+
+    public ServerProblem Problem { get; }
+    public int Number { get; }
+    public string Detail { get; }
+
+    /// <summary>English, for the log.</summary>
+    public override string ToString() => Problem switch
+    {
+        ServerProblem.FileMissing => $"Server file is missing: {Detail}. Reinstall Haulnet.",
+        ServerProblem.PortInUse => $"UDP port {Number} is already in use by another program.",
+        ServerProblem.StartFailed => $"Could not start the server: {Detail}",
+        ServerProblem.Exited => $"The server stopped unexpectedly (exit code {Number}). Last output: {Detail}",
+        _ => "",
+    };
 }

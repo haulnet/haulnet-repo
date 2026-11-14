@@ -44,6 +44,11 @@
     <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)\UnityEngine.UIModule.dll" Private="false" />
   </ItemGroup>
 
+  <!-- Translations (ADR 0018): embedded, so the mod stays one DLL. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\*.tsv" LogicalName="Haulnet.Localization.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <!--
     Bundled server: a pinned LuxonServer release (BSD-3-Clause, see THIRD_PARTY_NOTICES.md), downloaded at
     build time and verified by SHA-256. It is shipped in the mod package under server/ and never committed.

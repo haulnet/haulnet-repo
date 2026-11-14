@@ -1,0 +1,78 @@
+# Haulnet strings, English source (ADR 0018). Format: KEY<TAB>text, \n = line break, # = comment.
+# Placeholders like {server} must stay as they are; their order may change. Names (Haulnet, Photon Cloud,
+# haulnet-server), addresses, ports and "accepting: false" are not translated.
+# "#@max N" sets the length limit (characters, estimate) for the keys below it; the tests report longer texts.
+
+# Region page rows (name on the left, ping or port on the right)
+#@max 26
+ROW.ON_MY_PC	On my PC
+ROW.BY_ADDRESS	+ Server by address...
+ROW.THIS_PC	This PC · {name}
+#@max 12
+ROW.FULL	full
+ROW.CHECKING	checking...
+ROW.PING	{ping} ms
+
+# Text popups: the visible title is one line at a large font, directly above the input field
+#@max 16
+ADDRESS.TITLE	SERVER ADDRESS
+PORT.TITLE	UDP PORT
+# Buttons
+#@max 14
+ADDRESS.CONNECT	CONNECT
+PORT.CREATE	CREATE
+BACK	Back
+OK	OK
+
+# Message headers (text-popup headers are passed to the game, which does not show them)
+#@max 30
+ADDRESS.HEADER	SERVER BY ADDRESS
+PORT.HEADER	PORT
+NO_SERVER.HEADER	NO SERVER
+ADDRESS_INVALID.HEADER	WRONG ADDRESS
+NOT_FOUND.HEADER	SERVER NOT FOUND
+FULL.HEADER	SERVER IS FULL
+NO_ANSWER.HEADER	HAULNET: NO CONNECTION
+SERVER_FAILED.HEADER	HAULNET: SERVER ERROR
+PORT_INVALID.HEADER	WRONG PORT
+FRIEND_FAILED.HEADER	HAULNET: FRIEND NOT CONNECTED
+WRONG_PASSWORD.HEADER	WRONG PASSWORD
+BANNED.HEADER	BANNED
+INCOMPATIBLE.HEADER	HAULNET IS OFF
+
+# Message bodies (several lines are fine)
+#@max 240
+# {city} is a city name from the server list, in one language: keep it outside the sentence (no grammatical case).
+NO_SERVER.BODY	{city}: no server answers its status check, accepts new games and runs a compatible version.
+# {reason} is one of the ADDRESS_ERROR texts below.
+ADDRESS_INVALID.BODY	"{text}" is not a server address ({reason}).\nUse host or host:port, for example play.example.org or 203.0.113.5:27100.
+ADDRESS_ERROR.EMPTY	the address is empty
+ADDRESS_ERROR.MISSING_BRACKET	missing ']' in the IPv6 address
+ADDRESS_ERROR.AFTER_BRACKET	unexpected characters after ']': {value}
+ADDRESS_ERROR.INVALID_HOST	invalid host '{value}'
+ADDRESS_ERROR.INVALID_PORT	invalid port '{value}'
+ADDRESS_ERROR.INVALID_IPV6	invalid IPv6 address '{value}'
+NOT_FOUND.BODY	The name {host} does not resolve to an address.
+FULL.BODY	{server} does not accept new games (its status says accepting: false).
+NO_ANSWER.BODY	No answer from {server} on UDP {port}.
+# {reason} is one of the SERVER_ERROR texts below.
+SERVER_FAILED.BODY	The server on your PC could not start.\n\n{reason}
+SERVER_ERROR.FILE_MISSING	Server file is missing: {path}. Reinstall Haulnet.
+SERVER_ERROR.PORT_IN_USE	UDP port {port} is already in use by another program.
+# {reason} is the system's own message, {output} the last lines the server printed (both not translated).
+SERVER_ERROR.START_FAILED	Could not start the server: {reason}
+SERVER_ERROR.EXITED	The server stopped unexpectedly (exit code {code}). Last output: {output}
+PORT_INVALID.BODY	"{text}": the port must be a number from 1024 to 65533. The game uses it and the next two ports.
+UNREACHABLE.BODY	No answer from {host}'s PC ({addresses}).
+UNREACHABLE.BODY_UNNAMED	No answer from the host's PC ({addresses}).
+FRIEND_UNREACHABLE.BODY	{friend} got no answer from your PC on UDP {first}-{last}.
+FRIEND_UNREACHABLE.BODY_UNNAMED	A friend got no answer from your PC on UDP {first}-{last}.
+WRONG_PASSWORD.BODY	The lobby password you entered is not correct.
+BANNED.BODY	The host has banned you from this game.
+INCOMPATIBLE.BODY	Haulnet is not compatible with this game version yet. You are playing through Photon Cloud as usual.
+
+# Lobby status line under "Press T to chat"
+#@max 60
+STATUS.HOSTING	Haulnet · on your PC · UDP {first}-{last}
+STATUS.SERVER	Haulnet · server {server}
+STATUS.FRIEND_PC	Haulnet · host {address}

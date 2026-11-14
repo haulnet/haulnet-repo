@@ -1,118 +1,147 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine.Localization.Settings;
 
 namespace Haulnet;
 
 /// <summary>
-/// Player-facing strings. English is the source language; Russian follows the game's selected language.
+/// Player-facing strings in the game's selected language (ADR 0018). The texts live in <c>Localization/*.tsv</c>,
+/// embedded in the DLL; English is the source and fills every gap. The language is read on every access, so a screen
+/// built after a language change shows the new language.
 /// </summary>
 internal static class Text
 {
-    private static bool Ru
+    private static readonly Translations Strings = new(name =>
+        Translations.ReadResource(typeof(Text).Assembly, $"Haulnet.Localization.{name}.tsv"));
+
+    private static readonly HashSet<string> Reported = new();
+
+    public const string Title = "Haulnet";
+
+    private static string? Locale
     {
         get
         {
             try
             {
-                var code = LocalizationSettings.SelectedLocale?.Identifier.Code;
-                return code != null && code.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
+                return LocalizationSettings.SelectedLocale?.Identifier.Code;
             }
             catch (Exception)
             {
-                return false;
+                return null;
             }
         }
     }
 
-    private static string T(string en, string ru) => Ru ? ru : en;
+    private static string Get(string key, params (string Name, object? Value)[] args)
+    {
+        var text = Strings.Get(Locale, key);
+        if (Strings.LoadErrors.Count > 0)
+        {
+            foreach (var error in Strings.LoadErrors)
+            {
+                Plugin.Log.LogWarning($"Translations: {error}");
+            }
 
-    public const string Title = "Haulnet";
+            Strings.LoadErrors.Clear();
+        }
 
-    // Region page ("where to play")
+        if (text == null)
+        {
+            if (Reported.Add(key))
+            {
+                Plugin.Log.LogError($"Translations: no text for {key}.");
+            }
+
+            return key;
+        }
+
+        return Translations.Format(text, args);
+    }
+
+    // Names, not translated.
     public static string SectionHaulnet => "HAULNET";
     public static string SectionPhoton => "PHOTON CLOUD";
-    public static string RowOnMyPc => T("On my PC", "На моём ПК");
-    public static string RowByAddress => T("+ Server by address...", "+ Сервер по адресу...");
-    public static string HintFull => T("full", "заполнен");
-    public static string Checking => T("checking...", "проверка...");
     public static string NoPing => "—";
-    public static string Ms => T("ms", "мс");
-    public static string RowThisPc(string name) => name.Length > 0
-        ? T($"This PC · {name}", $"Этот ПК · {name}")
-        : T("This PC · haulnet-server", "Этот ПК · haulnet-server");
-    public static string NoServerHeader => T("NO SERVER", "НЕТ СЕРВЕРА");
-    public static string NoServerBody(string city) => T(
-        $"No server in {city} answers its status check, accepts new games and runs a compatible version.",
-        $"В {city} нет сервера, который отвечает на проверку статуса, принимает новые игры и работает на совместимой версии.");
+
+    // Region page ("where to play")
+    public static string RowOnMyPc => Get("ROW.ON_MY_PC");
+    public static string RowByAddress => Get("ROW.BY_ADDRESS");
+    public static string HintFull => Get("ROW.FULL");
+    public static string Checking => Get("ROW.CHECKING");
+    public static string Ping(string ms) => Get("ROW.PING", ("ping", ms));
+    public static string RowThisPc(string name) => Get("ROW.THIS_PC", ("name", name.Length > 0 ? name : "haulnet-server"));
+    public static string NoServerHeader => Get("NO_SERVER.HEADER");
+    public static string NoServerBody(string city) => Get("NO_SERVER.BODY", ("city", city));
 
     // Server by address
-    public static string AddressHeader => T("SERVER BY ADDRESS", "СЕРВЕР ПО АДРЕСУ");
-    public static string AddressBody => T("SERVER ADDRESS", "АДРЕС СЕРВЕРА");
-    public static string Connect => T("CONNECT", "ПОДКЛЮЧИТЬСЯ");
+    public static string AddressHeader => Get("ADDRESS.HEADER");
+    public static string AddressBody => Get("ADDRESS.TITLE");
+    public static string Connect => Get("ADDRESS.CONNECT");
     // Fallback only: the text popups normally use the game's own localized "Back" (WherePage.LocalizePopupBack).
-    public static string Back => T("Back", "Назад");
-    public static string AddressInvalidHeader => T("WRONG ADDRESS", "НЕВЕРНЫЙ АДРЕС");
-    public static string AddressInvalidBody(string text, string error) => T(
-        $"\"{text}\" is not a server address ({error}).\nUse host or host:port, for example play.example.org or 203.0.113.5:27100.",
-        $"«{text}» не похоже на адрес сервера ({error}).\nНужно имя или имя:порт, например play.example.org или 203.0.113.5:27100.");
-    public static string NotFoundHeader => T("SERVER NOT FOUND", "СЕРВЕР НЕ НАЙДЕН");
-    public static string NotFoundBody(string host) => T(
-        $"The name {host} does not resolve to an address.",
-        $"Имя {host} не находится в DNS.");
-    public static string FullHeader => T("SERVER IS FULL", "СЕРВЕР ЗАПОЛНЕН");
-    public static string FullBody(string server) => T(
-        $"{server} does not accept new games (its status says accepting: false).",
-        $"{server} не принимает новые игры (статус сервера: accepting: false).");
+    public static string Back => Get("BACK");
+    public static string AddressInvalidHeader => Get("ADDRESS_INVALID.HEADER");
+    public static string AddressInvalidBody(string text, AddressError error) =>
+        Get("ADDRESS_INVALID.BODY", ("text", text), ("reason", AddressReason(error)));
+    public static string NotFoundHeader => Get("NOT_FOUND.HEADER");
+    public static string NotFoundBody(string host) => Get("NOT_FOUND.BODY", ("host", host));
+    public static string FullHeader => Get("FULL.HEADER");
+    public static string FullBody(string server) => Get("FULL.BODY", ("server", server));
+
+    private static string AddressReason(AddressError error) => error.Problem switch
+    {
+        AddressProblem.Empty => Get("ADDRESS_ERROR.EMPTY"),
+        AddressProblem.MissingBracket => Get("ADDRESS_ERROR.MISSING_BRACKET"),
+        AddressProblem.AfterBracket => Get("ADDRESS_ERROR.AFTER_BRACKET", ("value", error.Value)),
+        AddressProblem.InvalidHost => Get("ADDRESS_ERROR.INVALID_HOST", ("value", error.Value)),
+        AddressProblem.InvalidPort => Get("ADDRESS_ERROR.INVALID_PORT", ("value", error.Value)),
+        AddressProblem.InvalidIPv6 => Get("ADDRESS_ERROR.INVALID_IPV6", ("value", error.Value)),
+        _ => error.ToString(),
+    };
 
     // Connection failures
-    public static string NoAnswerHeader => T("HAULNET: NO CONNECTION", "HAULNET: НЕТ ПОДКЛЮЧЕНИЯ");
-    public static string NoAnswerBody(string server, int port) => T(
-        $"No answer from {server} on UDP {port}.",
-        $"Нет ответа от {server} по UDP {port}.");
+    public static string NoAnswerHeader => Get("NO_ANSWER.HEADER");
+    public static string NoAnswerBody(string server, int port) => Get("NO_ANSWER.BODY", ("server", server), ("port", port));
 
     // On my PC
-    public static string ServerFailedHeader => T("HAULNET: SERVER ERROR", "HAULNET: ОШИБКА СЕРВЕРА");
-    public static string ServerFailedBody(string error) => T(
-        $"The server on your PC could not start.\n\n{error}",
-        $"Не удалось запустить сервер на твоём ПК.\n\n{error}");
-    public static string PortHeader => T("PORT", "ПОРТ");
-    public static string PortBody => T("UDP PORT", "UDP-ПОРТ");
-    public static string Create => T("CREATE", "СОЗДАТЬ");
-    public static string PortInvalidHeader => T("WRONG PORT", "НЕВЕРНЫЙ ПОРТ");
-    public static string PortInvalidBody(string text) => T(
-        $"\"{text}\": the port must be a number from 1024 to 65533. The game uses it and the next two ports.",
-        $"«{text}»: порт должен быть числом от 1024 до 65533. Игра занимает его и два следующих.");
+    public static string ServerFailedHeader => Get("SERVER_FAILED.HEADER");
+    public static string ServerFailedBody(ServerError error) => Get("SERVER_FAILED.BODY", ("reason", ServerReason(error)));
+    public static string PortHeader => Get("PORT.HEADER");
+    public static string PortBody => Get("PORT.TITLE");
+    public static string Create => Get("PORT.CREATE");
+    public static string PortInvalidHeader => Get("PORT_INVALID.HEADER");
+    public static string PortInvalidBody(string text) => Get("PORT_INVALID.BODY", ("text", text));
+
+    private static string ServerReason(ServerError error) => error.Problem switch
+    {
+        ServerProblem.FileMissing => Get("SERVER_ERROR.FILE_MISSING", ("path", error.Detail)),
+        ServerProblem.PortInUse => Get("SERVER_ERROR.PORT_IN_USE", ("port", error.Number)),
+        ServerProblem.StartFailed => Get("SERVER_ERROR.START_FAILED", ("reason", error.Detail)),
+        ServerProblem.Exited => Get("SERVER_ERROR.EXITED", ("code", error.Number), ("output", error.Detail)),
+        _ => error.ToString(),
+    };
 
     // Friend: the host's PC could not be reached
-    public static string UnreachableBody(string host, string addresses) => T(
-        $"No answer from {Name(host, "the host")}'s PC ({addresses}).",
-        $"Нет ответа от ПК {Name(host, "хоста")} ({addresses}).");
+    public static string UnreachableBody(string host, string addresses) => string.IsNullOrWhiteSpace(host)
+        ? Get("UNREACHABLE.BODY_UNNAMED", ("addresses", addresses))
+        : Get("UNREACHABLE.BODY", ("host", host), ("addresses", addresses));
 
     // Host: a friend reported that the connection failed
-    public static string FriendFailedHeader => T("HAULNET: FRIEND NOT CONNECTED", "HAULNET: ДРУГ НЕ ПОДКЛЮЧИЛСЯ");
-    public static string FriendUnreachableBody(string friend, int port) => T(
-        $"{Name(friend, "A friend")} got no answer from your PC on UDP {port}-{port + 2}.",
-        $"{Name(friend, "Друг")} не получил ответа от твоего ПК по UDP {port}-{port + 2}.");
+    public static string FriendFailedHeader => Get("FRIEND_FAILED.HEADER");
+    public static string FriendUnreachableBody(string friend, int port) => string.IsNullOrWhiteSpace(friend)
+        ? Get("FRIEND_UNREACHABLE.BODY_UNNAMED", ("first", port), ("last", port + 2))
+        : Get("FRIEND_UNREACHABLE.BODY", ("friend", friend), ("first", port), ("last", port + 2));
 
-    private static string Name(string name, string fallback) => string.IsNullOrWhiteSpace(name) ? fallback : name;
-    public static string Ok => "OK";
-    public static string WrongPasswordHeader => T("WRONG PASSWORD", "НЕВЕРНЫЙ ПАРОЛЬ");
-    public static string WrongPasswordBody => T(
-        "The lobby password you entered is not correct.",
-        "Пароль лобби введён неверно.");
-    public static string BannedHeader => T("BANNED", "ВЫ ЗАБАНЕНЫ");
-    public static string BannedBody => T(
-        "The host has banned you from this game.",
-        "Хост запретил тебе заходить в эту игру.");
-    public static string IncompatibleHeader => T("HAULNET IS OFF", "HAULNET ВЫКЛЮЧЕН");
-    public static string IncompatibleBody => T(
-        "Haulnet is not compatible with this game version yet. You are playing through Photon Cloud as usual.",
-        "Haulnet пока не совместим с этой версией игры. Ты играешь через Photon Cloud, как обычно.");
+    public static string Ok => Get("OK");
+    public static string WrongPasswordHeader => Get("WRONG_PASSWORD.HEADER");
+    public static string WrongPasswordBody => Get("WRONG_PASSWORD.BODY");
+    public static string BannedHeader => Get("BANNED.HEADER");
+    public static string BannedBody => Get("BANNED.BODY");
+    public static string IncompatibleHeader => Get("INCOMPATIBLE.HEADER");
+    public static string IncompatibleBody => Get("INCOMPATIBLE.BODY");
 
     // Lobby status line
-    public static string StatusHosting(int port) => T(
-        $"Haulnet · on your PC · UDP {port}-{port + 2}",
-        $"Haulnet · на твоём ПК · UDP {port}-{port + 2}");
-    public static string StatusServer(string server) => T($"Haulnet · server {server}", $"Haulnet · сервер {server}");
-    public static string StatusFriendPc(string address) => T($"Haulnet · host {address}", $"Haulnet · хост {address}");
+    public static string StatusHosting(int port) => Get("STATUS.HOSTING", ("first", port), ("last", port + 2));
+    public static string StatusServer(string server) => Get("STATUS.SERVER", ("server", server));
+    public static string StatusFriendPc(string address) => Get("STATUS.FRIEND_PC", ("address", address));
 }
