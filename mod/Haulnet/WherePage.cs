@@ -742,6 +742,7 @@ internal static class WherePage
             upperOnly: false, maxLength: 5, allowEmpty: false,
             text => OnPortEntered(page, text), null);
         _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+        LocalizePopupBack(page);
     }
 
     private static void OnPortEntered(MenuPageRegions page, string text)
@@ -809,6 +810,63 @@ internal static class WherePage
             upperOnly: false, maxLength: 100, allowEmpty: false,
             text => OnAddressEntered(page, text), null);
         _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+        LocalizePopupBack(page);
+    }
+
+    /// <summary>
+    /// The game's text-input popup (<c>MenuPagePopUpTextInput.backButton</c>) has a fixed English "Back" without a
+    /// <c>LocalizationChangedEvent</c>, and <c>MenuManager.PagePopUpTextInput</c> takes no text for it. Our popups
+    /// open from the region page, whose own Back button carries the game's localized string (asset
+    /// <c>REGIONS.BACK</c>); reuse it so the label follows the game's language. The popup is modal, so the language
+    /// cannot change while it is open. The game's own popups (Search, Create New, Rename) are left as they are.
+    /// </summary>
+    private static void LocalizePopupBack(MenuPageRegions page)
+    {
+        try
+        {
+            var popup = MenuPagePopUpTextInput.instance;
+            var back = popup != null ? popup.backButton : null;
+            var label = back != null ? back.GetComponentInChildren<TextMeshProUGUI>(true) : null;
+            if (back == null || label == null)
+            {
+                Plugin.Log.LogWarning("Text popup: Back button not found; its label stays as the game set it.");
+                return;
+            }
+
+            var text = GameBackText(page, out var rightToLeft);
+            if (text == null)
+            {
+                Plugin.Log.LogWarning("Text popup: the game's localized \"Back\" was not found; using Haulnet's own.");
+                text = Text.Back;
+                rightToLeft = false;
+            }
+
+            back.buttonTextString = text;
+            label.text = text;
+            label.isRightToLeftText = rightToLeft;
+            back.ResizeToText(); // What the game's LocalizationChangedEvent does after setting the text.
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning($"Text popup: could not label the Back button ({e.Message}).");
+        }
+    }
+
+    private static string? GameBackText(MenuPageRegions page, out bool rightToLeft)
+    {
+        rightToLeft = false;
+        var pageBack = page != null ? page.GetComponentsInChildren<MenuButton>(true).FirstOrDefault(IsBackButton) : null;
+        var asset = pageBack != null
+            ? pageBack.GetComponentInChildren<LocalizationChangedEvent>(true)?.GetLocalizedAsset()
+            : null;
+        var text = asset != null ? asset.GetLocalizedString() : null;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        rightToLeft = asset!.IsRightToLeft();
+        return text;
     }
 
     private static void OnAddressEntered(MenuPageRegions page, string text)
