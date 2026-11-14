@@ -46,7 +46,7 @@ where the game lives, exactly like picking a region.
   The server stops when you return to the main menu.
 - **This PC**: a `haulnet-server` running on your own PC, when its status endpoint answers.
 - **Community servers**: one row per city from the public
-  [server list](https://haulnet.github.io/haulnet-servers/v1/servers.json), with ping. Haulnet checks every
+  [server list](https://servers.haulnet.cc/v1/servers.json), with ping. Haulnet checks every
   server of the city and uses one that answers, accepts games and runs a compatible version: for a private game
   the least busy of the closest ones, for a public game the busiest one, so public players of a city meet.
 - **Your servers**: servers you played on recently (up to 5) with their ping, and servers you saved in the
@@ -97,7 +97,7 @@ repository.
 
 Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
 (`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL
-(`RegistryUrl`; a community can use its own list in the same format). The last downloaded server list is kept
+(`RegistryUrl`; empty means the Haulnet list, a community can use its own list in the same format). The last downloaded server list is kept
 in `BepInEx/cache/Haulnet` for offline use. To remove the mod, delete
 `BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
 `doorstop_config.ini` and `.doorstop_version` from the game folder.
