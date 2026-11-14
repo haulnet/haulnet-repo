@@ -66,7 +66,11 @@ internal static class WherePage
 
     // Children of the list that existed before the page filled it (the inactive row template): never shown.
     private static readonly HashSet<Transform> Untouched = new();
-    private static Vector3 _contentStart;
+    // Where the Haulnet rows start, relative to the rows' parent. Kept local, not in world space: the page slides
+    // in from above when it opens, so a world position taken in Start is stale once the page has arrived, and rows
+    // rebuilt later (a fresh server list) would land a page height above the visible list.
+    private static Vector3 _contentStartLocal;
+    private static Vector3 _listStartLocal;
     private static MenuButton? _tabHaulnet;
     private static MenuButton? _tabPhoton;
     private static bool _photonTab;
@@ -145,7 +149,9 @@ internal static class WherePage
             Untouched.Add(child);
         }
 
-        _contentStart = tabPos - new Vector3(0f, RowStep, 0f);
+        var contentStart = tabPos - new Vector3(0f, RowStep, 0f);
+        _contentStartLocal = parent.InverseTransformPoint(contentStart);
+        _listStartLocal = parent.InverseTransformPoint(tabPos);
 
         // The scroll box may switch rows on and off by visibility; the tabs decide visibility here.
         if (page.menuScrollBox != null)
@@ -157,7 +163,7 @@ internal static class WherePage
         if (tabsMade)
         {
             // Both lists start under the tab buttons; the game places its rows from the start position.
-            start.position = _contentStart;
+            start.position = contentStart;
             if (page.loadingGraphics != null)
             {
                 page.loadingGraphics.transform.position -= new Vector3(0f, RowStep, 0f);
@@ -205,7 +211,9 @@ internal static class WherePage
         _addressRow = null;
 
         var parent = page.transformStartPosition.parent;
-        var pos = sectionTitles ? page.transformStartPosition.position : _contentStart;
+        // Without tabs the page's own start position is moved below our rows after the first build, so a rebuild
+        // starts from the original list start, not from it.
+        var pos = parent.TransformPoint(sectionTitles ? _listStartLocal : _contentStartLocal);
         var titlePos = pos;
         if (sectionTitles)
         {
