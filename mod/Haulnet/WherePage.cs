@@ -637,12 +637,12 @@ internal static class WherePage
         }
         else if (ms > 999)
         {
-            text.text = ">999 " + Text.Ms;
+            text.text = Text.Ping(">999");
             text.color = PingBad;
         }
         else
         {
-            text.text = ms + " " + Text.Ms;
+            text.text = Text.Ping(ms.ToString(System.Globalization.CultureInfo.InvariantCulture));
             text.color = ms < 50 ? PingGood : ms < 100 ? PingFair : PingPoor;
         }
     }
@@ -850,7 +850,39 @@ internal static class WherePage
         {
             Plugin.Log.LogWarning($"Text popup: could not label the Back button ({e.Message}).");
         }
+
+        WarnIfTitleWraps();
     }
+
+    /// <summary>
+    /// The popup's visible title (its body text, one line at a large font) runs into the input field when it wraps.
+    /// Translations have length limits in en.tsv; this logs the cases the limits did not catch.
+    /// </summary>
+    private static void WarnIfTitleWraps()
+    {
+        try
+        {
+            var title = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.bodyTextMesh : null;
+            if (title == null)
+            {
+                return;
+            }
+
+            title.ForceMeshUpdate();
+            if (title.textInfo.lineCount > 1)
+            {
+                Plugin.Log.LogWarning(
+                    $"Text popup: title \"{title.text}\" takes {title.textInfo.lineCount} lines in {LocalizationSettingsCode()}; shorten the translation.");
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning($"Text popup: could not measure the title ({e.Message}).");
+        }
+    }
+
+    private static string LocalizationSettingsCode() =>
+        UnityEngine.Localization.Settings.LocalizationSettings.SelectedLocale?.Identifier.Code ?? "?";
 
     private static string? GameBackText(MenuPageRegions page, out bool rightToLeft)
     {

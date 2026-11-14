@@ -40,15 +40,15 @@ internal readonly struct ServerAddress
     /// <summary>
     /// Accepts "host", "host:port", "IPv4", "IPv4:port", "IPv6", "[IPv6]" and "[IPv6]:port".
     /// </summary>
-    public static bool TryParse(string? text, out ServerAddress result, out string error)
+    public static bool TryParse(string? text, out ServerAddress result, out AddressError error)
     {
         result = default;
-        error = "";
+        error = default;
         text = text?.Trim();
 
         if (string.IsNullOrEmpty(text))
         {
-            error = "address is empty";
+            error = new AddressError(AddressProblem.Empty, "");
             return false;
         }
 
@@ -60,7 +60,7 @@ internal readonly struct ServerAddress
             var close = text.IndexOf(']');
             if (close < 0)
             {
-                error = "missing ']' in IPv6 address";
+                error = new AddressError(AddressProblem.MissingBracket, "");
                 return false;
             }
 
@@ -70,7 +70,7 @@ internal readonly struct ServerAddress
             {
                 if (rest[0] != ':')
                 {
-                    error = "unexpected characters after ']'";
+                    error = new AddressError(AddressProblem.AfterBracket, rest);
                     return false;
                 }
 
@@ -95,7 +95,7 @@ internal readonly struct ServerAddress
 
         if (host.Length == 0 || host.IndexOfAny(new[] { ' ', '/', '\\' }) >= 0)
         {
-            error = $"invalid host '{host}'";
+            error = new AddressError(AddressProblem.InvalidHost, host);
             return false;
         }
 
@@ -103,14 +103,14 @@ internal readonly struct ServerAddress
         if (portText != null &&
             (!int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out port) || port < 1 || port > 65535))
         {
-            error = $"invalid port '{portText}'";
+            error = new AddressError(AddressProblem.InvalidPort, portText);
             return false;
         }
 
         var isIPv6 = IPAddress.TryParse(host, out var ip) && ip.AddressFamily == AddressFamily.InterNetworkV6;
         if (host.Contains(":") && !isIPv6)
         {
-            error = $"invalid IPv6 address '{host}'";
+            error = new AddressError(AddressProblem.InvalidIPv6, host);
             return false;
         }
 
@@ -126,4 +126,40 @@ internal readonly struct ServerAddress
     /// <summary>Same server, case-insensitive host, default port equal to 27000.</summary>
     public bool SameAs(ServerAddress other) =>
         string.Equals(Host, other.Host, System.StringComparison.OrdinalIgnoreCase) && EffectivePort == other.EffectivePort;
+}
+
+internal enum AddressProblem
+{
+    None,
+    Empty,
+    MissingBracket,
+    AfterBracket,
+    InvalidHost,
+    InvalidPort,
+    InvalidIPv6,
+}
+
+/// <summary>Why a text is not a server address; <see cref="Value"/> is the offending part. Shown through Text.</summary>
+internal readonly struct AddressError
+{
+    public AddressError(AddressProblem problem, string value)
+    {
+        Problem = problem;
+        Value = value;
+    }
+
+    public AddressProblem Problem { get; }
+    public string Value { get; }
+
+    /// <summary>English, for the log.</summary>
+    public override string ToString() => Problem switch
+    {
+        AddressProblem.Empty => "address is empty",
+        AddressProblem.MissingBracket => "missing ']' in IPv6 address",
+        AddressProblem.AfterBracket => "unexpected characters after ']'",
+        AddressProblem.InvalidHost => $"invalid host '{Value}'",
+        AddressProblem.InvalidPort => $"invalid port '{Value}'",
+        AddressProblem.InvalidIPv6 => $"invalid IPv6 address '{Value}'",
+        _ => "",
+    };
 }

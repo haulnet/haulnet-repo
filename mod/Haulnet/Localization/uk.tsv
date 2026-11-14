@@ -1,0 +1,59 @@
+# Haulnet: українська. Ключі та підстановки {…} — як в en.tsv. Звертання на «ти», як в інших рядках мода.
+# Переклад ще не перевірений носієм мови.
+
+ROW.ON_MY_PC	На моєму ПК
+ROW.BY_ADDRESS	+ Сервер за адресою...
+ROW.THIS_PC	Цей ПК · {name}
+ROW.FULL	заповнений
+ROW.CHECKING	перевірка...
+ROW.PING	{ping} мс
+
+ADDRESS.TITLE	АДРЕСА СЕРВЕРА
+PORT.TITLE	UDP-ПОРТ
+ADDRESS.CONNECT	ПІДКЛЮЧИТИСЯ
+PORT.CREATE	СТВОРИТИ
+BACK	Назад
+OK	ОК
+
+ADDRESS.HEADER	СЕРВЕР ЗА АДРЕСОЮ
+PORT.HEADER	ПОРТ
+NO_SERVER.HEADER	НЕМАЄ СЕРВЕРА
+ADDRESS_INVALID.HEADER	НЕПРАВИЛЬНА АДРЕСА
+NOT_FOUND.HEADER	СЕРВЕР НЕ ЗНАЙДЕНО
+FULL.HEADER	СЕРВЕР ЗАПОВНЕНИЙ
+NO_ANSWER.HEADER	HAULNET: НЕМАЄ ПІДКЛЮЧЕННЯ
+SERVER_FAILED.HEADER	HAULNET: ПОМИЛКА СЕРВЕРА
+PORT_INVALID.HEADER	НЕПРАВИЛЬНИЙ ПОРТ
+FRIEND_FAILED.HEADER	HAULNET: ДРУГ НЕ ПІДКЛЮЧИВСЯ
+WRONG_PASSWORD.HEADER	НЕПРАВИЛЬНИЙ ПАРОЛЬ
+BANNED.HEADER	ТЕБЕ ЗАБАНЕНО
+INCOMPATIBLE.HEADER	HAULNET ВИМКНЕНО
+
+NO_SERVER.BODY	{city}: немає сервера, який відповідає на перевірку стану, приймає нові ігри та працює на сумісній версії.
+ADDRESS_INVALID.BODY	«{text}» не схоже на адресу сервера ({reason}).\nПотрібне ім'я або ім'я:порт, наприклад play.example.org або 203.0.113.5:27100.
+ADDRESS_ERROR.EMPTY	адреса порожня
+ADDRESS_ERROR.MISSING_BRACKET	бракує «]» в IPv6-адресі
+ADDRESS_ERROR.AFTER_BRACKET	зайві символи після «]»: {value}
+ADDRESS_ERROR.INVALID_HOST	неприпустиме ім'я «{value}»
+ADDRESS_ERROR.INVALID_PORT	неприпустимий порт «{value}»
+ADDRESS_ERROR.INVALID_IPV6	неприпустима IPv6-адреса «{value}»
+NOT_FOUND.BODY	Ім'я {host} не знаходиться в DNS.
+FULL.BODY	{server} не приймає нові ігри (статус сервера: accepting: false).
+NO_ANSWER.BODY	Немає відповіді від {server} по UDP {port}.
+SERVER_FAILED.BODY	Не вдалося запустити сервер на твоєму ПК.\n\n{reason}
+SERVER_ERROR.FILE_MISSING	Немає файлу сервера: {path}. Перевстанови Haulnet.
+SERVER_ERROR.PORT_IN_USE	UDP-порт {port} уже зайнятий іншою програмою.
+SERVER_ERROR.START_FAILED	Не вдалося запустити сервер: {reason}
+SERVER_ERROR.EXITED	Сервер несподівано зупинився (код виходу {code}). Останній вивід: {output}
+PORT_INVALID.BODY	«{text}»: порт має бути числом від 1024 до 65533. Гра займає його і два наступні.
+UNREACHABLE.BODY	Немає відповіді від ПК {host} ({addresses}).
+UNREACHABLE.BODY_UNNAMED	Немає відповіді від ПК хоста ({addresses}).
+FRIEND_UNREACHABLE.BODY	{friend} не отримав відповіді від твого ПК по UDP {first}-{last}.
+FRIEND_UNREACHABLE.BODY_UNNAMED	Друг не отримав відповіді від твого ПК по UDP {first}-{last}.
+WRONG_PASSWORD.BODY	Пароль лобі введено неправильно.
+BANNED.BODY	Хост заборонив тобі заходити в цю гру.
+INCOMPATIBLE.BODY	Haulnet поки не сумісний із цією версією гри. Ти граєш через Photon Cloud, як зазвичай.
+
+STATUS.HOSTING	Haulnet · на твоєму ПК · UDP {first}-{last}
+STATUS.SERVER	Haulnet · сервер {server}
+STATUS.FRIEND_PC	Haulnet · хост {address}

@@ -95,6 +95,25 @@ for the first build.
 Game, Photon and BepInEx assemblies are referenced from your installation and never included in this
 repository.
 
+Checks that do not need the game (the translation loader and the translation files):
+
+```bash
+dotnet test mod/Haulnet.Tests
+```
+
+## Languages and translations
+
+Haulnet follows the game's language (Settings → Language). Its own texts exist in English, Russian and
+Ukrainian; in any other language they are shown in English, and the parts that belong to the game (such as
+*Back*) are always in the game's language.
+
+Texts live in `mod/Haulnet/Localization/<language>.tsv`, one `KEY<TAB>text` per line, the same format as the
+game's own translation files; `en.tsv` is the source and explains the placeholders and length limits. To add or
+fix a language, copy `en.tsv` to `<code>.tsv` (for example `de.tsv` or `pt-BR.tsv`, as the game names its
+languages), translate the texts after the tab, run the checks above, and open a pull request with a screenshot of
+the region page and of one popup in that language. Missing keys fall back to English, so a partial translation
+works.
+
 Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
 (`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL
 (`RegistryUrl`; empty means the Haulnet list, a community can use its own list in the same format). The last downloaded server list is kept
