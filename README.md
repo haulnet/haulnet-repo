@@ -101,6 +101,23 @@ Checks that do not need the game (the translation loader and the translation fil
 dotnet test mod/Haulnet.Tests
 ```
 
+### Release packages
+
+```bash
+dotnet build mod/Haulnet -c Release -t:Package -p:ThunderstoreTeam=<team>
+```
+
+writes `artifacts/<version>/` and publishes nothing:
+
+| File | Contents |
+|---|---|
+| `Haulnet-<version>.zip`, `Haulnet.zip` | folder `Haulnet/` (plugin, `server/`, licenses): extract into `BepInEx/plugins` |
+| `<team>-Haulnet-<version>.zip` | Thunderstore package: `manifest.json`, `icon.png`, `README.md` from [`packaging/thunderstore`](packaging/thunderstore), files under `plugins/` so mod managers keep the `server/` folder |
+| `SHA256SUMS` | hashes of the zips |
+
+The version comes from `mod/Haulnet/Haulnet.csproj` and must match `Plugin.Version` in `Plugin.cs`; the target
+stops otherwise. Releases are built on a maintainer machine because the build needs the game's assemblies.
+
 ## Languages and translations
 
 Haulnet follows the game's language (Settings → Language). Its own texts exist in English, Russian and

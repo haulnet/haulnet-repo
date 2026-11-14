@@ -1,0 +1,7 @@
+{
+  "name": "Haulnet",
+  "version_number": "0.0.0",
+  "website_url": "https://haulnet.cc/",
+  "description": "Play R.E.P.O. with friends on a server you control: host on your own PC (like Open to LAN), on a community server or on any server by address instead of Photon Cloud. Off until you pick it.",
+  "dependencies": ["BepInEx-BepInExPack-5.4.2305"]
+}

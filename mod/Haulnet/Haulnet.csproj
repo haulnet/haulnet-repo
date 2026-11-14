@@ -91,6 +91,9 @@
            Text="BepInEx is not installed in GameDir ($(GameDir)). Install BepInEx 5 into the game first." />
   </Target>
 
+  <!-- Release packaging: dotnet build mod/Haulnet -c Release -t:Package (see Packaging.targets). -->
+  <Import Project="Packaging.targets" />
+
   <!-- Optional: copy the built plugin into the game for local testing (DeployToGame=true). -->
   <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
     <MakeDir Directories="$(GameDir)\BepInEx\plugins\Haulnet\server" />
