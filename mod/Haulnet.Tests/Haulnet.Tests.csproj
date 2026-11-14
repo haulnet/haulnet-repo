@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Checks that do not need the game (AGENTS.md): the translation loader, the translation files, the
-       haulnet-server status answer and its parser. -->
+       haulnet-server status answer and its parser, the server ranking and the monitor's uptime document. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -16,6 +16,9 @@
     <Compile Include="..\Haulnet\Translations.cs" Link="Translations.cs" />
     <Compile Include="..\Haulnet\ServerStatus.cs" Link="ServerStatus.cs" />
     <Compile Include="..\Haulnet\StatusResponse.cs" Link="StatusResponse.cs" />
+    <Compile Include="..\Haulnet\ServerRanking.cs" Link="ServerRanking.cs" />
+    <Compile Include="..\Haulnet\StabilityData.cs" Link="StabilityData.cs" />
+    <Compile Include="..\Haulnet\MiniJson.cs" Link="MiniJson.cs" />
     <None Include="..\Haulnet\Localization\*.tsv" Link="Localization\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

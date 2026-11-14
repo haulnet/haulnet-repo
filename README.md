@@ -49,6 +49,9 @@ where the game lives, exactly like picking a region.
   [server list](https://servers.haulnet.cc/v1/servers.json), with ping. Haulnet checks every
   server of the city and uses one that answers, accepts games and runs a compatible version: for a private game
   the least busy of the closest ones, for a public game the busiest one, so public players of a city meet.
+  Cities are ordered by quality, closest and most stable first: stability is the uptime over the last day and
+  week measured by the public server monitor, named in the list. A server with recent outages moves down and is
+  picked less often; without monitor data the order follows ping alone.
 - **Your servers**: servers you played on recently (up to 5) with their ping, and servers you saved in the
   config file. A server that runs the `haulnet-server` package shows its name and whether it is full.
 - **+ Server by address...**: type `host` or `host:port` (port 27000 if not given; Ctrl+V pastes). Use it for
