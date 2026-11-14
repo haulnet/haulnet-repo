@@ -90,7 +90,31 @@ internal static class Registry
             request.SetRequestHeader("If-None-Match", etag);
         }
 
-        yield return request.SendWebRequest();
+        UnityWebRequestAsyncOperation? operation = null;
+        var sendError = "";
+        try
+        {
+            operation = request.SendWebRequest();
+        }
+        catch (Exception e)
+        {
+            // The game refuses plain http to other hosts ("Insecure connection not allowed"); an escaping exception
+            // would leave _fetching set and the list would never be fetched again in this game session.
+            sendError = e.Message;
+        }
+
+        if (operation == null)
+        {
+            _fetching = false;
+            var hint = url.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                ? " The game allows plain http:// only to this PC; use https:// for other hosts."
+                : "";
+            Plugin.Log.LogWarning($"Server list from {url} not loaded ({sendError}); using the cached copy.{hint}");
+            done(false);
+            yield break;
+        }
+
+        yield return operation;
         _fetching = false;
 
         var changed = false;
