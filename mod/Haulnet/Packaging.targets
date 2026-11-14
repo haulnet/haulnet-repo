@@ -1,0 +1,99 @@
+<Project>
+  <!--
+    Release packaging. Builds the plugin, then writes artifacts/<version>/:
+      Haulnet-<version>.zip and Haulnet.zip   manual install: extract into BepInEx/plugins
+      <team>-Haulnet-<version>.zip             Thunderstore package (mod managers)
+      SHA256SUMS
+    Run on a maintainer machine with the game installed (the build needs its assemblies):
+      dotnet build mod/Haulnet -c Release -t:Package -p:ThunderstoreTeam=<team>
+    Nothing is published; uploading is a separate, manual step.
+  -->
+  <PropertyGroup>
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</RepoRoot>
+    <ThunderstoreSourceDir>$(RepoRoot)packaging\thunderstore\</ThunderstoreSourceDir>
+    <ThunderstoreTeam Condition="'$(ThunderstoreTeam)' == ''">Haulnet</ThunderstoreTeam>
+    <PackageOutDir>$(RepoRoot)artifacts\$(Version)\</PackageOutDir>
+    <PackageStageDir>$(MSBuildThisFileDirectory)obj\package\</PackageStageDir>
+  </PropertyGroup>
+
+  <!-- Writes UTF-8 without BOM and LF line ends (WriteLinesToFile uses CRLF on Windows, which breaks sha256sum -c). -->
+  <UsingTask TaskName="HaulnetWriteText" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <File ParameterType="System.String" Required="true" />
+      <Text ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+        System.IO.File.WriteAllText(File, Text.Replace("\r\n", "\n"), new System.Text.UTF8Encoding(false));
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="Package" DependsOnTargets="Build">
+    <Error Condition="'$(Configuration)' != 'Release'" Text="Package needs a Release build: add -c Release." />
+
+    <!-- One version everywhere: BepInPlugin version (Plugin.cs), assembly version (csproj), package version. -->
+    <PropertyGroup>
+      <_PluginSource>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)Plugin.cs'))</_PluginSource>
+      <_VersionLine>Version = "$(Version)"</_VersionLine>
+      <_VersionMatches>$(_PluginSource.Contains('$(_VersionLine)'))</_VersionMatches>
+    </PropertyGroup>
+    <Error Condition="'$(_VersionMatches)' != 'True'"
+           Text="Plugin.Version in Plugin.cs does not match Version $(Version) in Haulnet.csproj; change both." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(ThunderstoreTeam)', '^[A-Za-z0-9_]+$'))"
+           Text="ThunderstoreTeam '$(ThunderstoreTeam)' may contain only letters, digits and _." />
+
+    <PropertyGroup>
+      <_Manual>$(PackageStageDir)manual\</_Manual>
+      <_Store>$(PackageStageDir)thunderstore\</_Store>
+      <_ManifestTemplate>$([System.IO.File]::ReadAllText('$(ThunderstoreSourceDir)manifest.json'))</_ManifestTemplate>
+      <_Manifest>$(_ManifestTemplate.Replace('"version_number": "0.0.0"', '"version_number": "$(Version)"'))</_Manifest>
+      <_ManualZip>$(PackageOutDir)Haulnet-$(Version).zip</_ManualZip>
+      <_StoreZip>$(PackageOutDir)$(ThunderstoreTeam)-Haulnet-$(Version).zip</_StoreZip>
+    </PropertyGroup>
+    <Error Condition="'$(_Manifest)' == '$(_ManifestTemplate)'"
+           Text="packaging/thunderstore/manifest.json must contain &quot;version_number&quot;: &quot;0.0.0&quot; as the placeholder." />
+
+    <ItemGroup>
+      <_ServerFiles Include="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt" />
+      <_Licenses Include="$(RepoRoot)LICENSE;$(RepoRoot)THIRD_PARTY_NOTICES.md" />
+      <_StoreExtras Include="$(ThunderstoreSourceDir)icon.png;$(ThunderstoreSourceDir)README.md" />
+      <_StoreExtras Include="$(RepoRoot)CHANGELOG.md" Condition="Exists('$(RepoRoot)CHANGELOG.md')" />
+    </ItemGroup>
+
+    <RemoveDir Directories="$(PackageStageDir);$(PackageOutDir)" />
+
+    <!-- Manual install: one folder Haulnet/ for BepInEx/plugins. -->
+    <Copy SourceFiles="$(TargetPath);@(_Licenses)" DestinationFolder="$(_Manual)Haulnet" />
+    <Copy SourceFiles="@(_ServerFiles)" DestinationFolder="$(_Manual)Haulnet\server" />
+
+    <!-- Thunderstore: metadata at the root; everything under plugins/ keeps its folders in mod managers
+         (r2modman flattens other folders, which would break the server/ lookup in HostServer). -->
+    <Copy SourceFiles="@(_StoreExtras)" DestinationFolder="$(_Store)" />
+    <MakeDir Directories="$(_Store)" />
+    <HaulnetWriteText File="$(_Store)manifest.json" Text="$(_Manifest)" />
+    <Copy SourceFiles="$(TargetPath);@(_Licenses)" DestinationFolder="$(_Store)plugins" />
+    <Copy SourceFiles="@(_ServerFiles)" DestinationFolder="$(_Store)plugins\server" />
+
+    <MakeDir Directories="$(PackageOutDir)" />
+    <ZipDirectory SourceDirectory="$(_Manual)" DestinationFile="$(_ManualZip)" />
+    <Copy SourceFiles="$(_ManualZip)" DestinationFiles="$(PackageOutDir)Haulnet.zip" />
+    <ZipDirectory SourceDirectory="$(_Store)" DestinationFile="$(_StoreZip)" />
+
+    <ItemGroup>
+      <_Artifacts Include="$(_ManualZip);$(PackageOutDir)Haulnet.zip;$(_StoreZip)" />
+    </ItemGroup>
+    <GetFileHash Files="@(_Artifacts)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_Hashed" />
+    </GetFileHash>
+    <ItemGroup>
+      <_SumLine Include="@(_Hashed->'%(FileHash)')">
+        <Line>$([System.String]::Copy('%(_Hashed.FileHash)').ToLowerInvariant())  %(_Hashed.Filename)%(_Hashed.Extension)</Line>
+      </_SumLine>
+    </ItemGroup>
+    <HaulnetWriteText File="$(PackageOutDir)SHA256SUMS" Text="@(_SumLine->'%(Line)', '%0A')%0A" />
+
+    <Message Importance="high" Text="Haulnet $(Version) packaged in $(PackageOutDir) (Thunderstore team $(ThunderstoreTeam)). Nothing was published." />
+  </Target>
+</Project>
