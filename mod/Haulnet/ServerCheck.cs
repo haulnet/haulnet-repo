@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -100,28 +101,58 @@ internal static class ServerCheck
                 status.PingMs = connectMs;
             }
 
-            client.ReceiveTimeout = TimeoutMs;
             client.SendTimeout = TimeoutMs;
             var stream = client.GetStream();
             var request = Encoding.ASCII.GetBytes($"GET /status HTTP/1.0\r\nHost: {address.HostForEndpoint}\r\nConnection: close\r\n\r\n");
             stream.Write(request, 0, request.Length);
 
+            // Stop as soon as the answer is complete instead of waiting for the server to close: behind some
+            // proxying VPN clients the close arrives seconds after the answer. The whole read shares one time limit.
             var buffer = new byte[MaxStatusBytes];
             var total = 0;
-            int read;
-            while (total < buffer.Length && (read = stream.Read(buffer, total, buffer.Length - total)) > 0)
+            var ended = false;
+            var reading = Stopwatch.StartNew();
+            while (total < buffer.Length && !StatusResponse.IsComplete(buffer, total))
             {
+                var remainingMs = TimeoutMs - (int)reading.ElapsedMilliseconds;
+                if (remainingMs <= 0)
+                {
+                    break;
+                }
+
+                client.ReceiveTimeout = remainingMs;
+                int read;
+                try
+                {
+                    read = stream.Read(buffer, total, buffer.Length - total);
+                }
+                catch (IOException)
+                {
+                    break;
+                }
+
+                if (read == 0)
+                {
+                    ended = true;
+                    break;
+                }
+
                 total += read;
             }
 
-            var response = Encoding.UTF8.GetString(buffer, 0, total);
-            var bodyStart = response.IndexOf("\r\n\r\n", StringComparison.Ordinal);
-            if (!response.StartsWith("HTTP/1.", StringComparison.Ordinal) || response.Length < 12 || response.Substring(9, 3) != "200" || bodyStart < 0)
+            if (!ended && total < buffer.Length && !StatusResponse.IsComplete(buffer, total))
+            {
+                Plugin.Log.LogDebug($"Server {address}: status answer incomplete after {reading.ElapsedMilliseconds} ms ({total} bytes).");
+                return;
+            }
+
+            var body = StatusResponse.Body(buffer, total);
+            if (body == null)
             {
                 return;
             }
 
-            var parsed = ServerStatus.Parse(response.Substring(bodyStart + 4));
+            var parsed = ServerStatus.Parse(body);
             status.HasStatus = true;
             status.Name = KnownServers.CleanName(parsed.Name);
             status.Luxon = parsed.Luxon;
