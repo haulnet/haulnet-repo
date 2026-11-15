@@ -668,7 +668,7 @@ internal static class WherePage
             .Select((server, i) => (server, status: row.Checks![i].IsCompleted && !row.Checks[i].IsFaulted ? row.Checks[i].Result : null))
             .ToList();
         var usable = checks
-            .Where(x => x.status is { HasStatus: true, Accepting: true }
+            .Where(x => x.status is { HasStatus: true, Accepting: true, GamePortClosed: false }
                         && (compatible.Count == 0 || compatible.Contains(x.status.Luxon)))
             .ToList();
 
@@ -716,6 +716,13 @@ internal static class WherePage
         if (row.City == null && !row.KeepName && row.SavedName.Length == 0 && status.Name.Length > 0 && row.Address.HasValue)
         {
             row.Element.textName.text = new KnownServer(row.Address.Value, status.Name, false).Display;
+        }
+
+        if (status.GamePortClosed)
+        {
+            ping.text = Text.NoPing; // The machine answers, the game server does not run: no ping to show.
+            ping.color = PingBad;
+            return;
         }
 
         if (status.HasStatus && !status.Accepting)
@@ -827,6 +834,17 @@ internal static class WherePage
             return;
         }
 
+        if (row.Status == null && !row.Shown)
+        {
+            return; // Still checking: a click now would skip what the check finds.
+        }
+
+        if (row.Status is { GamePortClosed: true })
+        {
+            ShowNotRunning(row.Address!.Value);
+            return;
+        }
+
         if (row.Status is { HasStatus: true, Accepting: false })
         {
             ShowNotAccepting(row.Status, row.Address!.Value.Display);
@@ -837,6 +855,10 @@ internal static class WherePage
         Session.ChooseServer(row.Address!.Value, name);
         Continue(page);
     }
+
+    /// <summary>Caught before the saves page: the game would only end in "Disconnected: Exception" after them.</summary>
+    private static void ShowNotRunning(ServerAddress address) =>
+        Popups.ShowNow(Text.NotRunningHeader, Text.NotRunningBody(address.Display, address.EffectivePort));
 
     /// <summary>A server that is about to update reads like an outage under the "full" message, so it gets its own.</summary>
     private static void ShowNotAccepting(ServerStatus status, string server)
@@ -1096,6 +1118,12 @@ internal static class WherePage
         if (status != null && !status.Resolved)
         {
             Popups.ShowNow(Text.NotFoundHeader, Text.NotFoundBody(address.Host));
+            yield break;
+        }
+
+        if (status is { GamePortClosed: true })
+        {
+            ShowNotRunning(address);
             yield break;
         }
 

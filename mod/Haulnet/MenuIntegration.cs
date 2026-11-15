@@ -12,7 +12,9 @@ namespace Haulnet;
 /// <item><c>MenuPageMain.Start</c>: the main menu opened, reset the session;</item>
 /// <item><c>SteamLobbyManager.SetLobbyData</c>: publish where the game lives in the Steam lobby;</item>
 /// <item><c>MenuPageLobby.Start</c> / <c>UpdateChatPrompt</c>: a status line in the lobby, remember the server;</item>
-/// <item><c>NetworkConnect.OnDisconnected</c>: a Haulnet explanation instead of "Disconnected: ExceptionOnConnect".</item>
+/// <item><c>NetworkConnect.OnDisconnected</c>: a Haulnet explanation instead of "Disconnected: ExceptionOnConnect";</item>
+/// <item><c>NetworkManager.OnDisconnected</c>: the same for a connection lost later, e.g. "Disconnected: Exception"
+/// in the lobby when the server stops.</item>
 /// </list>
 /// If a hook is missing after a game update, that feature is skipped and logged.
 /// </summary>
@@ -30,6 +32,7 @@ internal static class MenuIntegration
         TryPatch(harmony, typeof(MenuPageLobby), "Start", postfix: nameof(AfterLobbyStart));
         TryPatch(harmony, typeof(MenuPageLobby), nameof(MenuPageLobby.UpdateChatPrompt), postfix: nameof(AfterUpdateChatPrompt));
         TryPatch(harmony, typeof(NetworkConnect), nameof(NetworkConnect.OnDisconnected), prefix: nameof(BeforeConnectDisconnected), postfix: nameof(AfterConnectDisconnected));
+        TryPatch(harmony, typeof(NetworkManager), nameof(NetworkManager.OnDisconnected), prefix: nameof(BeforeGameDisconnected), postfix: nameof(AfterGameDisconnected));
     }
 
     private static void TryPatch(Harmony harmony, Type type, string method, string? prefix = null, string? postfix = null)
@@ -208,5 +211,62 @@ internal static class MenuIntegration
                 Popups.Schedule(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));
                 break;
         }
+    }
+
+    private static ConnectionTarget? _lostTarget;
+    private static bool _lostInMainMenu;
+
+    /// <summary>
+    /// <c>NetworkManager.OnDisconnected</c> (game code) handles a lost connection once the game has a NetworkManager
+    /// (lobby, level): it schedules "Disconnected / Cause: Exception" (or a timeout) and leaves the room. A stopped
+    /// Haulnet server ends exactly like this; replace the cause with what happened. Photon Cloud keeps the game's text.
+    /// </summary>
+    private static void BeforeGameDisconnected(DisconnectCause cause)
+    {
+        var target = Session.Current;
+        if (target.Kind == TargetKind.Cloud
+            || cause is not (DisconnectCause.Exception or DisconnectCause.ExceptionOnConnect
+                or DisconnectCause.ServerTimeout or DisconnectCause.ClientTimeout))
+        {
+            return;
+        }
+
+        _lostTarget = target;
+        // Read before the game reacts: leaving the room switches the level to the main menu within the call.
+        _lostInMainMenu = SemiFunc.IsMainMenu();
+        Plugin.Log.LogWarning($"Connection to {target.Kind} {target.Address} lost: {cause}.");
+    }
+
+    private static void AfterGameDisconnected()
+    {
+        var target = _lostTarget;
+        _lostTarget = null;
+        if (target == null || _lostInMainMenu)
+        {
+            return; // In the main menu the game shows its popup at once; a Haulnet target is reset there anyway.
+        }
+
+        string header, body;
+        switch (target.Kind)
+        {
+            case TargetKind.Server:
+                header = Text.LostHeader;
+                body = Text.LostServerBody(target.Label.Length > 0 ? $"{target.Label} ({target.Address.Display})" : target.Address.Display);
+                break;
+            case TargetKind.FriendPc:
+                header = Text.LostHeader;
+                body = Text.LostFriendPcBody(Session.LobbyOwnerName);
+                break;
+            case TargetKind.Host when Plugin.Server.State == ServerState.Failed:
+                header = Text.ServerFailedHeader;
+                body = Text.ServerFailedBody(Plugin.Server.Error);
+                break;
+            default:
+                return;
+        }
+
+        // Lobby or level: the game scheduled its popup for the main menu it now loads; the schedule has one slot,
+        // the last call wins.
+        Popups.Schedule(header, body);
     }
 }

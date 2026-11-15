@@ -38,6 +38,8 @@ NOT_FOUND.HEADER	SERVER NOT FOUND
 FULL.HEADER	SERVER IS FULL
 UPDATING.HEADER	SERVER IS UPDATING
 NO_ANSWER.HEADER	HAULNET: NO CONNECTION
+NOT_RUNNING.HEADER	SERVER NOT RUNNING
+LOST.HEADER	HAULNET: CONNECTION LOST
 SERVER_FAILED.HEADER	HAULNET: SERVER ERROR
 PORT_INVALID.HEADER	WRONG PORT
 FRIEND_FAILED.HEADER	HAULNET: FRIEND NOT CONNECTED
@@ -62,6 +64,11 @@ FULL.BODY	{server} does not accept new games (its status says accepting: false).
 # {server} is a city name or a server address: keep it outside the sentence (no grammatical case).
 UPDATING.BODY	{server}: the server is updating and starts no new games until it is done. Try again in a few minutes.
 NO_ANSWER.BODY	No answer from {server} on UDP {port}.
+# {server} is a server address or name: keep it outside the sentence (no grammatical case).
+NOT_RUNNING.BODY	{server}: the machine answers, but no game server runs on UDP {port}. Ask its owner to start it, or check the address.
+LOST.BODY	The connection to the server was lost: it stopped or can no longer be reached.\n{server}\nWhen it is back, create or join the game again.
+LOST.BODY_HOST_PC	The connection to {host}'s PC was lost: the host's game closed or the PC can no longer be reached.
+LOST.BODY_HOST_PC_UNNAMED	The connection to the host's PC was lost: the host's game closed or the PC can no longer be reached.
 # {reason} is one of the SERVER_ERROR texts below.
 SERVER_FAILED.BODY	The server on your PC could not start.\n\n{reason}
 SERVER_ERROR.FILE_MISSING	Server file is missing: {path}. Reinstall Haulnet.
