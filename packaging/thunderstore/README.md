@@ -31,6 +31,15 @@ their Haulnet where the game lives.
 - Hosting "On my PC" runs [LuxonServer](https://github.com/niansa/LuxonServer) (BSD-3-Clause), an open-source
   Photon-compatible server, shipped in this package. Windows may ask whether to allow it on your network.
 - Run your own server, for friends or for everyone: [haulnet-server](https://github.com/haulnet/haulnet-server).
+- Haulnet's code is written with AI assistance (Claude by Anthropic) and tested in the game.
+
+## What Haulnet sends where
+
+- When the region page opens, Haulnet downloads the server list from servers.haulnet.cc and the servers' status
+  from the monitor the list names, and pings the listed servers.
+- The server you play on sees your IP address and your Steam ID, as Photon's servers do.
+- When you host "On my PC", the addresses of your PC are written into the Steam lobby, so your friends' Haulnet can reach you.
+- No analytics, no accounts, nothing else is collected.
 
 ## Links
 
