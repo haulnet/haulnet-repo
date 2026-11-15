@@ -38,7 +38,8 @@ their Haulnet where the game lives.
 - When the region page opens, Haulnet downloads the server list from servers.haulnet.cc and the servers' status
   from the monitor the list names, and pings the listed servers.
 - The server you play on sees your IP address and your Steam ID, as Photon's servers do.
-- When you host "On my PC", the addresses of your PC are written into the Steam lobby, so your friends' Haulnet can reach you.
+- When you host "On my PC", the addresses of your PC are written into the Steam lobby, so your friends' Haulnet
+  can reach you.
 - No analytics, no accounts, nothing else is collected.
 
 ## Links
