@@ -2,9 +2,9 @@
 
 **Play R.E.P.O. with friends on a server you control, instead of Photon Cloud.**
 
-Who it is for: players far from Photon's regions (a Haulnet server can stand in any city; today Moscow,
-Novosibirsk, Vladivostok), people who want their own server for friends or for everyone, and friends in the same
-room or on Radmin VPN, where the host's PC is the server and friends connect straight to it.
+Who it is for: players far from Photon's regions (a Haulnet server can stand in any city), people who want their
+own server for friends or for everyone, and direct play from your PC like "Open to LAN": friends connect straight to
+the host's PC over the home network, or over the internet through Radmin VPN, WireGuard or a forwarded port.
 
 R.E.P.O. always plays through Photon's servers, even when both players sit in the same room. Haulnet adds a
 **HAULNET** tab to the game's region page with more places to play:

@@ -7,9 +7,10 @@ community), or on any server by address. Until you pick a Haulnet place, the
 game plays exactly as without the mod.
 
 Useful when no Photon Cloud region is close to you (a Haulnet server can
-stand in any city), when you want a server of your own, and when friends sit
-in the same room or play through Radmin VPN: then the host's PC is the
-server.
+stand in any city), when you want a server of your own, and for direct play
+from your PC, like "Open to LAN": friends connect straight to the host's PC
+over the home network, or over the internet through Radmin VPN, WireGuard or
+a forwarded port.
 
 Full guide: https://haulnet.cc/docs/install/
 
