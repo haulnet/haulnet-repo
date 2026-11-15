@@ -13,8 +13,8 @@ using Object = UnityEngine.Object;
 namespace Haulnet;
 
 /// <summary>
-/// The game's region page becomes "where to play" (ADR 0015) with two tabs: HAULNET (On my PC, a haulnet-server
-/// running on this PC, community servers from the registry, recent and saved servers, Server by address) and
+/// The game's region page becomes "where to play" (ADR 0015) with two tabs: HAULNET (On my PC, Server by address,
+/// a haulnet-server running on this PC, saved and recent servers, community servers from the registry) and
 /// PHOTON CLOUD (the game's own region rows, untouched). Choosing a row sets the target for this game and
 /// continues the game's own flow exactly like a region would (saves page for a private game, the Public game page
 /// for a public one).
@@ -236,11 +236,17 @@ internal static class WherePage
             pos.y -= RowStep;
         }
 
+        // The player's own places come first and the public cities, which can be a long list, last: nobody should
+        // scroll past every city to type an address or reach their own server. Ranking by ping only swaps places
+        // among the city rows (ReorderCities), so it is unaffected.
         var elements = new List<MenuElementRegion>();
         if (IsHostFlow(page))
         {
             elements.Add(AddRow(page, parent, ref pos, CodeMyPc, Text.RowOnMyPc, $"UDP {Plugin.Settings.HostPort}", Grey));
         }
+
+        _addressRow = AddRow(page, parent, ref pos, CodeAddress, Text.RowByAddress, "", Grey);
+        elements.Add(_addressRow);
 
         // A haulnet-server running on this PC (its status endpoint answers on loopback).
         var loopback = ServerAddress.FromIp(System.Net.IPAddress.Loopback, 0);
@@ -255,22 +261,7 @@ internal static class WherePage
             ShowStatus(row);
         }
 
-        var registryAddresses = new List<ServerAddress>();
-        var cities = Registry.Cities
-            .Select((city, index) => (city, index))
-            .OrderBy(x => LastCityRank.TryGetValue(x.city.Id, out var rank) ? rank : int.MaxValue)
-            .ThenBy(x => x.index)
-            .Select(x => x.city);
-        foreach (var city in cities)
-        {
-            var row = new Row(city.DisplayName, null, city);
-            row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, city.DisplayName, Text.Checking, Grey);
-            row.Place = ((RectTransform)row.Element.transform).anchoredPosition;
-            Rows.Add(row);
-            elements.Add(row.Element);
-            registryAddresses.AddRange(city.Servers.Select(s => s.Address));
-        }
-
+        var registryAddresses = Registry.Cities.SelectMany(c => c.Servers).Select(s => s.Address).ToList();
         foreach (var known in KnownServers.All())
         {
             if (registryAddresses.Any(a => a.SameAs(known.Address)) || (local != null && known.Address.SameAs(loopback)))
@@ -284,8 +275,19 @@ internal static class WherePage
             elements.Add(row.Element);
         }
 
-        _addressRow = AddRow(page, parent, ref pos, CodeAddress, Text.RowByAddress, "", Grey);
-        elements.Add(_addressRow);
+        var cities = Registry.Cities
+            .Select((city, index) => (city, index))
+            .OrderBy(x => LastCityRank.TryGetValue(x.city.Id, out var rank) ? rank : int.MaxValue)
+            .ThenBy(x => x.index)
+            .Select(x => x.city);
+        foreach (var city in cities)
+        {
+            var row = new Row(city.DisplayName, null, city);
+            row.Element = AddRow(page, parent, ref pos, CodeRow + Rows.Count, city.DisplayName, Text.Checking, Grey);
+            row.Place = ((RectTransform)row.Element.transform).anchoredPosition;
+            Rows.Add(row);
+            elements.Add(row.Element);
+        }
 
         if (sectionTitles)
         {
