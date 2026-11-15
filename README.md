@@ -81,6 +81,7 @@ the two PCs works:
 | Situation | What to do | Tested with two PCs |
 |---|---|---|
 | Friends far away: [Radmin VPN](https://www.radmin-vpn.com/) (free, Windows) | Everyone joins the same Radmin network first; the invite then contains your Radmin address. Radmin links the PCs directly when it can and shows Relay/TCP when it cannot. | yes |
+| Friends far away: [WireGuard](https://www.wireguard.com/) | Put your PC and your friends' PCs into one WireGuard network first; at least one of them needs an address the others can reach (a VPS or a forwarded port). The invite then contains your WireGuard address. | not yet |
 | Same home or LAN party | Allow the Windows Firewall prompt; friends use your local address from the invite. | not yet |
 | Both sides have IPv6 | Your router must let incoming UDP through to your PC. | not yet |
 | Router with a public IPv4 address | Forward UDP 27000-27002 (or your port and the next two) to your PC. | not yet |
@@ -107,7 +108,7 @@ flowchart LR
         S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, IPv6, forwarded port" --> S
+    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, WireGuard, IPv6, forwarded port" --> S
 ```
 
 - The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
