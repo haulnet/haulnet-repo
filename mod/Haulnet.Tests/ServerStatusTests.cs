@@ -96,4 +96,34 @@ public class ServerStatusTests
     {
         Assert.False(new ServerStatus { Accepting = false, Draining = true }.Updating);
     }
+
+    // 2026-11-15: ICMP to vladivostok-1 (120 ms) got no answer once and the TCP connect, completed by a VPN client on
+    // the path, made it 1 ms and the first city. The fallback is now the status answer time, which only the server
+    // can produce.
+    [Fact]
+    public void PingIsIcmpWhenItAnswered()
+    {
+        var status = new ServerStatus { IcmpMs = 120, AnswerMs = 275 };
+
+        Assert.Equal(120, status.PingMs);
+        Assert.False(status.PingFromAnswer);
+    }
+
+    [Fact]
+    public void WithoutIcmpPingIsTheStatusAnswerTime()
+    {
+        var status = new ServerStatus { IcmpMs = -1, AnswerMs = 275 };
+
+        Assert.Equal(275, status.PingMs);
+        Assert.True(status.PingFromAnswer);
+    }
+
+    [Fact]
+    public void WithoutIcmpAndAnswerThereIsNoPing()
+    {
+        var status = new ServerStatus();
+
+        Assert.Equal(-1, status.PingMs);
+        Assert.False(status.PingFromAnswer);
+    }
 }
