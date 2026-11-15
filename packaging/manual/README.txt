@@ -18,13 +18,13 @@ Full guide: https://haulnet.cc/docs/install/
 REQUIREMENTS
 ------------
 
-- R.E.P.O. from Steam.
+- R.E.P.O. from Steam, on Windows.
 - BepInExPack (BepInEx 5) installed in the game folder:
   https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/
 - Everyone in a Haulnet game needs Haulnet and the same game version.
 
-A mod manager (r2modman, Gale, Thunderstore app) installs Haulnet and
-BepInExPack by itself; this zip is for installing by hand.
+This zip is for installing by hand. Haulnet is planned for Thunderstore, so
+that mod managers (r2modman, Gale, the Thunderstore app) can install it.
 
 
 INSTALL
@@ -58,8 +58,8 @@ tab lists, in this order:
   friend runs.
 - This PC: shown when a haulnet-server runs on your PC.
 - Your saved servers, then the servers you played on recently, one row
-  each with name or address; the right side shows the ping, or "full" or
-  "updating".
+  each with name or address; the right side shows the ping, "full",
+  "updating", or "—" when the server does not answer.
 - One row per city, e.g. Europe [Moscow]: Haulnet servers (official and
   community), with ping. Nobody needs to reach your PC there.
 

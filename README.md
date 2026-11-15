@@ -52,8 +52,8 @@ The HAULNET tab lists your own places first and the public cities last, in this 
   it does not need to be listed anywhere.
 - **This PC · *name***: shown when a `haulnet-server` runs on your own PC.
 - **Saved and recent servers**: one plain row each, with the server's name or address: first the servers you
-  saved in the config file, then up to 5 you played on recently. The right side shows the ping, or *full* or
-  *updating*.
+  saved in the config file, then up to 5 you played on recently. The right side shows the ping, *full*,
+  *updating*, or *—* when the server does not answer.
 - **One row per city**, e.g. *Europe [Moscow]*: the Haulnet servers (official and community) of the public
   [server list](https://servers.haulnet.cc/v1/servers.json), with ping. Haulnet checks every
   server of the city and uses one that answers, accepts games and runs a compatible version: for a private game
