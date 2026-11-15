@@ -114,7 +114,7 @@ writes `artifacts/<version>/` and publishes nothing:
 
 | File | Contents |
 |---|---|
-| `Haulnet-<version>.zip`, `Haulnet.zip` | folder `Haulnet/` (plugin, `server/`, licenses): extract into `BepInEx/plugins` |
+| `Haulnet-<version>.zip`, `Haulnet.zip` | folder `Haulnet/` (plugin, `server/`, licenses, and `README.txt` from [`packaging/manual`](packaging/manual) with install steps for players): extract into `BepInEx/plugins` |
 | `<team>-Haulnet-<version>.zip` | Thunderstore package: `manifest.json`, `icon.png`, `README.md` from [`packaging/thunderstore`](packaging/thunderstore), files under `plugins/` so mod managers keep the `server/` folder |
 | `SHA256SUMS` | hashes of the zips |
 
