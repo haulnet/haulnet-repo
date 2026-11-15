@@ -1,7 +1,7 @@
 <Project>
   <!--
     Release packaging. Builds the plugin, then writes artifacts/<version>/:
-      Haulnet-<version>.zip and Haulnet.zip   manual install: extract into BepInEx/plugins
+      Haulnet-<version>.zip and Haulnet.zip   manual install: extract into BepInEx/plugins (README.txt inside)
       <team>-Haulnet-<version>.zip             Thunderstore package (mod managers)
       SHA256SUMS
     Run on a maintainer machine with the game installed (the build needs its assemblies):
@@ -11,6 +11,7 @@
   <PropertyGroup>
     <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</RepoRoot>
     <ThunderstoreSourceDir>$(RepoRoot)packaging\thunderstore\</ThunderstoreSourceDir>
+    <ManualSourceDir>$(RepoRoot)packaging\manual\</ManualSourceDir>
     <ThunderstoreTeam Condition="'$(ThunderstoreTeam)' == ''">Haulnet</ThunderstoreTeam>
     <PackageOutDir>$(RepoRoot)artifacts\$(Version)\</PackageOutDir>
     <PackageStageDir>$(MSBuildThisFileDirectory)obj\package\</PackageStageDir>
@@ -64,8 +65,9 @@
 
     <RemoveDir Directories="$(PackageStageDir);$(PackageOutDir)" />
 
-    <!-- Manual install: one folder Haulnet/ for BepInEx/plugins. -->
-    <Copy SourceFiles="$(TargetPath);@(_Licenses)" DestinationFolder="$(_Manual)Haulnet" />
+    <!-- Manual install: one folder Haulnet/ for BepInEx/plugins. Its README.txt is the first thing a player sees on
+         opening the zip; mod managers show the store README instead, so the Thunderstore package does not get it. -->
+    <Copy SourceFiles="$(TargetPath);@(_Licenses);$(ManualSourceDir)README.txt" DestinationFolder="$(_Manual)Haulnet" />
     <Copy SourceFiles="@(_ServerFiles)" DestinationFolder="$(_Manual)Haulnet\server" />
 
     <!-- Thunderstore: metadata at the root; everything under plugins/ keeps its folders in mod managers
