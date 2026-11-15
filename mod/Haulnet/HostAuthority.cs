@@ -18,7 +18,8 @@ namespace Haulnet;
 /// <item>lobby password: the room property <c>PASSWORD</c> is compared with the joining player's property
 /// <c>PASSWORD</c>; nothing in the client compares them;</item>
 /// <item>kick and ban: <c>NetworkManager.KickPlayer</c> / <c>BanPlayer</c> raise events 123 / 124 that no client
-/// handles; the server removes the player and sends them event 199 ("kicked by the server").</item>
+/// handles; the server removes the player and sends them event 199 ("kicked by the server"). A banned player's
+/// rejoin fails with "UserId found in excluded list", which the game shows as "banned".</item>
 /// </list>
 /// LuxonServer has no such logic, so in Haulnet games the host (always the MasterClient) does it: it sends the
 /// player event 199, which the game already handles (popup, leave room), preceded by a Haulnet event with the
@@ -110,13 +111,17 @@ internal sealed class HostAuthority : MonoBehaviourPunCallbacks
         }
     }
 
+    /// <summary>
+    /// The game's only kick button (<c>MenuButtonKick.Kick</c>) calls <c>BanPlayer</c>. On Photon Cloud the player
+    /// then sees the game's "Kicked" text and only a rejoin says "banned", so the first removal sends no reason.
+    /// </summary>
     private static void AfterBan(Player _playerAvatar)
     {
         if (Active && _playerAvatar != null && !_playerAvatar.IsLocal)
         {
             Banned.Add(Identity(_playerAvatar));
             Plugin.Log.LogInfo($"Banning {_playerAvatar.NickName} for this game.");
-            Remove(_playerAvatar, ReasonBanned);
+            Remove(_playerAvatar, 0);
         }
     }
 
