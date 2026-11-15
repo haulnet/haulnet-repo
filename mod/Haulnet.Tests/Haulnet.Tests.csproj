@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Checks that do not need the game (AGENTS.md): the translation loader, the translation files, the
-       haulnet-server status answer and its parser, the server ranking and the monitor's uptime document. -->
+       haulnet-server status answer and its parser, the server ranking, the monitor's uptime document, and the
+       config the mod writes for LuxonServer and the output it reads back (recorded from each server version). -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -19,6 +20,9 @@
     <Compile Include="..\Haulnet\ServerRanking.cs" Link="ServerRanking.cs" />
     <Compile Include="..\Haulnet\StabilityData.cs" Link="StabilityData.cs" />
     <Compile Include="..\Haulnet\MiniJson.cs" Link="MiniJson.cs" />
+    <Compile Include="..\Haulnet\HostConfig.cs" Link="HostConfig.cs" />
+    <Compile Include="..\Haulnet\ServerOutput.cs" Link="ServerOutput.cs" />
+    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Haulnet\Localization\*.tsv" Link="Localization\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
