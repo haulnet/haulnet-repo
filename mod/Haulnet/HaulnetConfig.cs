@@ -11,6 +11,7 @@ internal sealed class HaulnetConfig
     private readonly ConfigEntry<int> _hostPort;
     private readonly ConfigEntry<string> _savedServers;
     private readonly ConfigEntry<string> _recentServers;
+    private readonly ConfigEntry<string> _lastAddress;
 
     public HaulnetConfig(ConfigFile config)
     {
@@ -36,10 +37,11 @@ internal sealed class HaulnetConfig
             "",
             "Servers you played on recently (filled automatically, newest first, at most 5).");
 
-        // Earlier builds prefilled "Server by address" with this; the game's field has no placeholder, so the stored
-        // text looked like a hint and could be submitted by accident. Drop it from the file instead of keeping it as an
-        // orphan nobody reads.
-        config.Remove(config.Bind("Servers", "LastAddress", "").Definition);
+        _lastAddress = config.Bind(
+            "Servers",
+            "LastAddress",
+            "",
+            "Last address from \"Server by address\" whose lobby opened; prefilled in that field next time.");
 
         // Empty means "the built-in list". BepInEx keeps whatever value is stored in the file, so storing the
         // built-in URL there would pin every install to it and a later move of the list would never reach players.
@@ -112,5 +114,11 @@ internal sealed class HaulnetConfig
     {
         get => _recentServers.Value ?? "";
         set => _recentServers.Value = value ?? "";
+    }
+
+    public string LastAddress
+    {
+        get => _lastAddress.Value?.Trim() ?? "";
+        set => _lastAddress.Value = value?.Trim() ?? "";
     }
 }

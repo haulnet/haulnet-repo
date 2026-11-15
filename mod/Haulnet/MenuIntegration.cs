@@ -97,6 +97,7 @@ internal static class MenuIntegration
             if (target.Kind == TargetKind.Server)
             {
                 KnownServers.AddRecent(target.Address, target.Label);
+                WherePage.LobbyOpened(target.Address);
             }
 
             // The game shows "<Photon region> <room>"; a Haulnet server's region code means nothing.

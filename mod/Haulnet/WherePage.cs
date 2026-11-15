@@ -84,8 +84,11 @@ internal static class WherePage
     private static string? _popupHint;
     private static bool _popupRichText; // The field's own setting (off in the game's popup), restored after the hint.
     private const string HintAlpha = "<alpha=#66>";
-    // Text of the last address attempt that failed in this game session, so the player can fix a typo.
+    // Text typed last in this game session, working or not, so the player can fix a typo.
     private static string _draft = "";
+    // Address the popup sent the player to; remembered as LastAddress only when its lobby opens.
+    private static ServerAddress? _typedAddress;
+    private static string _typedText = "";
     private static bool _continuing;
     private static bool _busy;
     private static float _reorderedAt = float.NegativeInfinity;
@@ -918,16 +921,17 @@ internal static class WherePage
     // ---------- Server by address ----------
 
     /// <summary>
-    /// The field starts empty with a dimmed example of the format. The game's field has no placeholder: its default
-    /// text is real text that Connect would submit, so it is never prefilled with an address. Recent servers already
-    /// cover joining a server again.
+    /// Like Minecraft's "Direct Connection": the field holds the text typed earlier in this game session, otherwise
+    /// the last address that worked (<see cref="LobbyOpened"/>). The game's field has no placeholder, so a dimmed
+    /// example of the format is drawn while it is empty.
     /// </summary>
     private static void OpenAddressPopup(MenuPageRegions page)
     {
+        var initial = _draft.Length > 0 ? _draft : Plugin.Settings.LastAddress;
         MenuManager.instance.PagePopUpTextInput(
             Text.AddressHeader, null, Popups.Accent,
             Text.AddressBody, null,
-            _draft, Text.Connect, null,
+            initial, Text.Connect, null,
             upperOnly: false, maxLength: 100, allowEmpty: false,
             text => OnAddressEntered(page, text), ForgetPopupInput);
         TrackPopupInput(Text.AddressHint);
@@ -1100,9 +1104,26 @@ internal static class WherePage
         }
 
         Plugin.Log.LogInfo($"Server by address {address}: ping {status?.PingMs ?? -1} ms, status endpoint {(status?.HasStatus == true ? "'" + status.Name + "' luxon " + status.Luxon : "absent")}.");
-        _draft = "";
+        _typedAddress = address;
+        _typedText = _draft;
         Session.ChooseServer(address, status?.Name ?? "");
         Continue(page);
+    }
+
+    /// <summary>
+    /// A lobby opened on <paramref name="server"/>. If the player got there through "Server by address", the address
+    /// worked: remember it for the field. Before this, a typed address was stored as soon as it parsed, so a name that
+    /// never resolved stayed in the field for good.
+    /// </summary>
+    public static void LobbyOpened(ServerAddress server)
+    {
+        if (_typedAddress is { } typed && typed.SameAs(server) && _typedText.Length > 0)
+        {
+            Plugin.Settings.LastAddress = _typedText;
+        }
+
+        _typedAddress = null;
+        _typedText = "";
     }
 
     /// <summary>
