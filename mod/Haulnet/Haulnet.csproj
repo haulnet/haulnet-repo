@@ -82,6 +82,16 @@
            Text="LuxonServer LICENSE has an unexpected SHA-256 ($(_LuxonLicenseHash)); expected $(LuxonLicenseSha256)." />
     <Copy SourceFiles="$(LuxonCacheDir)luxon_server.exe" DestinationFiles="$(OutDir)server\luxon_server.exe" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(LuxonCacheDir)LICENSE" DestinationFiles="$(OutDir)server\LuxonServer-LICENSE.txt" SkipUnchangedFiles="true" />
+    <!-- The binary also contains Luxon, Mbed TLS and other libraries; BSD-3 and the other licenses ask binary
+         redistributions to carry their notices. The file is written for one LuxonServer release: review it
+         whenever LuxonVersion changes, then update its first line. -->
+    <PropertyGroup>
+      <_LuxonNotices>$(MSBuildThisFileDirectory)LuxonServer-THIRD_PARTY_NOTICES.txt</_LuxonNotices>
+      <_LuxonNoticesText>$([System.IO.File]::ReadAllText('$(_LuxonNotices)'))</_LuxonNoticesText>
+    </PropertyGroup>
+    <Error Condition="!$(_LuxonNoticesText.StartsWith('Third-party notices for luxon_server.exe (LuxonServer $(LuxonVersion))'))"
+           Text="LuxonServer-THIRD_PARTY_NOTICES.txt is not written for LuxonServer $(LuxonVersion) (see its first line); review it for this release." />
+    <Copy SourceFiles="$(_LuxonNotices)" DestinationFiles="$(OutDir)server\LuxonServer-THIRD_PARTY_NOTICES.txt" SkipUnchangedFiles="true" />
   </Target>
 
   <Target Name="CheckGameDir" BeforeTargets="ResolveAssemblyReferences">
@@ -98,7 +108,7 @@
   <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
     <MakeDir Directories="$(GameDir)\BepInEx\plugins\Haulnet\server" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GameDir)\BepInEx\plugins\Haulnet" />
-    <Copy SourceFiles="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt"
+    <Copy SourceFiles="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt;$(OutDir)server\LuxonServer-THIRD_PARTY_NOTICES.txt"
           DestinationFolder="$(GameDir)\BepInEx\plugins\Haulnet\server" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="Haulnet deployed to $(GameDir)\BepInEx\plugins\Haulnet" />
   </Target>

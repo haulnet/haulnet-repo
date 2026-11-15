@@ -108,4 +108,5 @@ by semiwork (developers of R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and
 describe compatibility.
 
 MIT license (see LICENSE). Bundled components and their licenses:
-THIRD_PARTY_NOTICES.md and server\LuxonServer-LICENSE.txt.
+THIRD_PARTY_NOTICES.md, server\LuxonServer-LICENSE.txt and
+server\LuxonServer-THIRD_PARTY_NOTICES.txt.
