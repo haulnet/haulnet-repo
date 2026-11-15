@@ -43,12 +43,26 @@ public sealed class Plugin : BaseUnityPlugin
             return;
         }
 
-        // Optional parts: each one logs and skips itself if its game hook is missing.
+        // Optional parts: each one logs and skips itself if its game hook is missing. The guard is for anything else
+        // a game update breaks: it turns off that part only, and the rest (the INCOMPATIBLE popup too) still loads.
         Runner = HaulnetRunner.Create();
-        WherePage.Apply(_harmony);
-        MenuIntegration.Apply(_harmony);
-        HostAuthority.Apply(_harmony, Runner.gameObject);
-        JoinGuard.Apply(_harmony, Runner.gameObject);
+        var harmony = _harmony;
+        TryApply(nameof(WherePage), () => WherePage.Apply(harmony));
+        TryApply(nameof(MenuIntegration), () => MenuIntegration.Apply(harmony));
+        TryApply(nameof(HostAuthority), () => HostAuthority.Apply(harmony, Runner.gameObject));
+        TryApply(nameof(JoinGuard), () => JoinGuard.Apply(harmony, Runner.gameObject));
         Log.LogInfo($"{Name} {Version} loaded.");
+    }
+
+    private static void TryApply(string part, Action apply)
+    {
+        try
+        {
+            apply();
+        }
+        catch (Exception e)
+        {
+            Log.LogError($"{part} could not be installed (game update?); that part of Haulnet is off: {e}");
+        }
     }
 }

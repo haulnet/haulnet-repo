@@ -43,7 +43,7 @@ internal sealed class RegistryCity
 }
 
 /// <summary>
-/// Downloads the public server list (contract: docs/server-registry.md in the workspace, URL configurable) and
+/// Downloads the public server list (format: the haulnet-servers repository, URL configurable) and
 /// keeps the last good copy on disk, so the list also works offline. The fetch runs when the region page opens;
 /// a 304 or a failure keeps the cached list.
 /// </summary>

@@ -51,15 +51,16 @@ internal static class LobbyData
     private const string KeyPort = "haulnet_port";
     private const string KeyServer = "haulnet_server";
 
-    // SteamLobbyManager.currentLobby is internal in the game.
-    private static readonly AccessTools.FieldRef<SteamLobbyManager, Lobby> CurrentLobbyRef =
-        AccessTools.FieldRefAccess<SteamLobbyManager, Lobby>("currentLobby");
+    // SteamLobbyManager.currentLobby is internal in the game; null when a game update renamed it.
+    private static readonly AccessTools.FieldRef<SteamLobbyManager, Lobby>? CurrentLobbyRef =
+        GameAccess.FieldRef<SteamLobbyManager, Lobby>("currentLobby",
+            "Haulnet cannot publish or read where a game lives, friends cannot follow Haulnet games through Steam");
 
-    /// <summary>The game's current Steam lobby, or default when there is none.</summary>
+    /// <summary>The game's current Steam lobby, or default when there is none (or Haulnet cannot see it).</summary>
     public static Lobby CurrentLobby()
     {
         var manager = SteamLobbyManager.instance;
-        return manager != null ? CurrentLobbyRef(manager) : default;
+        return manager != null && CurrentLobbyRef != null ? CurrentLobbyRef(manager) : default;
     }
 
     public static void WriteHost(Lobby lobby, IEnumerable<IPAddress> addresses, int port)
