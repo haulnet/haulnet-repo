@@ -2,9 +2,9 @@
 
 **Play R.E.P.O. with friends on a server you control, instead of Photon Cloud.**
 
-Who it is for: players far from Photon's regions (a Haulnet server can stand in any city; today Moscow,
-Novosibirsk, Vladivostok), people who want their own server for friends or for everyone, and friends in the same
-room or on Radmin VPN, where the host's PC is the server and friends connect straight to it.
+Who it is for: players far from Photon's regions (a Haulnet server can stand in any city), people who want their
+own server for friends or for everyone, and direct play from your PC like "Open to LAN": friends connect straight to
+the host's PC over the home network, or over the internet through Radmin VPN, WireGuard or a forwarded port.
 
 R.E.P.O. always plays through Photon's servers, even when both players sit in the same room. Haulnet adds a
 **HAULNET** tab to the game's region page with more places to play:
@@ -30,7 +30,7 @@ their Haulnet where the game lives. The game's own *Join friend* menu item is no
 - No Photon account, no admin rights, no changes to Windows settings or the `hosts` file.
 - Hosting "On my PC" runs [LuxonServer](https://github.com/niansa/LuxonServer) (BSD-3-Clause), an open-source
   Photon-compatible server, shipped in this package. Windows may ask whether to allow it on your network.
-- Run your own public server: [haulnet-server](https://github.com/haulnet/haulnet-server).
+- Run your own server, for friends or for everyone: [haulnet-server](https://github.com/haulnet/haulnet-server).
 
 ## Links
 
@@ -38,6 +38,8 @@ their Haulnet where the game lives. The game's own *Join friend* menu item is no
 - Source and issues: [github.com/haulnet/haulnet-repo](https://github.com/haulnet/haulnet-repo)
 - Security reports: security@haulnet.cc
 
-Haulnet is an independent fan project, MIT-licensed. It is not affiliated with or endorsed by semiwork (developers
-of R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used only
-to describe compatibility. Haulnet is for people who own R.E.P.O. on Steam.
+Haulnet is an independent fan project. It is not affiliated with or endorsed by semiwork (developers of
+R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used
+only to describe compatibility.
+
+MIT license. Haulnet is for people who own R.E.P.O. on Steam.
