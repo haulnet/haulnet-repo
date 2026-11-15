@@ -9,12 +9,12 @@ the host's PC over the home network, or over the internet through Radmin VPN, Wi
 R.E.P.O. always plays through Photon's servers, even when both players sit in the same room. Haulnet adds a
 **HAULNET** tab to the game's region page with more places to play:
 
-- **On my PC**: like "Open to LAN". A server starts inside your game on UDP 27000–27002. Friends need a network
-  path to your PC: [Radmin VPN](https://www.radmin-vpn.com/), [WireGuard](https://www.wireguard.com/), the same
-  home network, IPv6 or a forwarded port.
+- **On my PC**: like "Open to LAN". A server starts inside your game on the UDP port you enter and the next two
+  (27000–27002 by default). Friends need a network path to your PC: [Radmin VPN](https://www.radmin-vpn.com/),
+  [WireGuard](https://www.wireguard.com/), the same home network, IPv6 or a forwarded port.
 - **+ Server by address**: type `host` or `host:port` of a server you or a friend runs.
 - **This PC**, when a haulnet-server runs on your PC, then your **saved and recent servers**, one row each with
-  the ping, or *full* or *updating*.
+  the ping, *full*, *updating*, or *—* when the server does not answer.
 - **One row per city**, e.g. *Europe [Moscow]*: Haulnet servers (official and community) from the public list at
   [servers.haulnet.cc](https://servers.haulnet.cc/), with ping. Haulnet picks a working, compatible server of the
   city. Nobody needs to reach your PC there.
