@@ -4,14 +4,14 @@
 
 Who it is for: players far from Photon's regions (a Haulnet server can stand in any city; today Moscow,
 Novosibirsk, Vladivostok), people who want their own server for friends or for everyone, and friends in the same
-room or on the same VPN, where the host's PC is the server and nothing goes over the internet.
+room or on Radmin VPN, where the host's PC is the server and friends connect straight to it.
 
 R.E.P.O. always plays through Photon's servers, even when both players sit in the same room. Haulnet adds a
 **HAULNET** tab to the game's region page with more places to play:
 
 - **On my PC**: like "Open to LAN". A server starts inside your game on UDP 27000–27002. Friends need a network
-  path to your PC: a VPN you all use (WireGuard, Radmin, ZeroTier, Tailscale; tested with two PCs over Radmin VPN),
-  or, not tested yet, the same network, IPv6 or a forwarded port.
+  path to your PC: [Radmin VPN](https://www.radmin-vpn.com/) (tested with two PCs), or, not tested yet, the same
+  home network, IPv6 or a forwarded port.
 - **+ Server by address**: type `host` or `host:port` of a server you or a friend runs.
 - **This PC**, when a haulnet-server runs on your PC, then your **saved and recent servers**, one row each with
   the ping, or *full* or *updating*.

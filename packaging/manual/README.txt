@@ -8,7 +8,8 @@ game plays exactly as without the mod.
 
 Useful when no Photon Cloud region is close to you (a Haulnet server can
 stand in any city), when you want a server of your own, and when friends sit
-in the same room or share a VPN: then the host's PC is the server.
+in the same room or play through Radmin VPN: then the host's PC is the
+server.
 
 Full guide: https://haulnet.cc/docs/install/
 
@@ -49,8 +50,9 @@ tab lists, in this order:
 
 - On my PC: host a private game on your PC. Enter a UDP port (27000 by
   default); the server uses it and the next two. Friends need a network path
-  to your PC: a VPN you all use (tested with two PCs over Radmin VPN), or,
-  not tested yet, the same network, IPv6 or a forwarded port.
+  to your PC: Radmin VPN (https://www.radmin-vpn.com/, tested with two
+  PCs), or, not tested yet, the same home network, IPv6 or a forwarded
+  port.
 - + Server by address...: type host or host:port of a server you or a
   friend runs.
 - This PC: shown when a haulnet-server runs on your PC.
@@ -70,12 +72,12 @@ WINDOWS FIREWALL AND PORTS
 
 The first time you host "On my PC", Windows may ask whether luxon_server
 and R.E.P.O. may use the network. Allow it for the networks your friends
-come from (private networks for a LAN or most VPNs). Without it, friends get
+come from (your home network, the Radmin VPN adapter). Without it, friends get
 no answer from your PC.
 
 - Hosting uses the port you enter and the next two: UDP 27000-27002 by
   default. Forward these on your router only if friends join over the
-  internet without a VPN (not tested with two PCs yet).
+  internet without Radmin VPN (not tested with two PCs yet).
 - UDP 47777: optional address check between a friend and the host.
 
 
