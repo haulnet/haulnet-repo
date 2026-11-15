@@ -10,8 +10,8 @@ R.E.P.O. always plays through Photon's servers, even when both players sit in th
 **HAULNET** tab to the game's region page with more places to play:
 
 - **On my PC**: like "Open to LAN". A server starts inside your game on UDP 27000–27002. Friends need a network
-  path to your PC: [Radmin VPN](https://www.radmin-vpn.com/) (tested with two PCs), or, not tested yet, the same
-  home network, IPv6 or a forwarded port.
+  path to your PC: [Radmin VPN](https://www.radmin-vpn.com/) (tested with two PCs), or, not tested yet,
+  [WireGuard](https://www.wireguard.com/), the same home network, IPv6 or a forwarded port.
 - **+ Server by address**: type `host` or `host:port` of a server you or a friend runs.
 - **This PC**, when a haulnet-server runs on your PC, then your **saved and recent servers**, one row each with
   the ping, or *full* or *updating*.
