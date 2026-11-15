@@ -144,8 +144,6 @@ in `BepInEx/cache/Haulnet` for offline use. To remove the mod, delete
 ## Planned
 
 - Automatic port forwarding on routers that support UPnP.
-- Community relays: when no direct path exists, traffic goes through a relay that anyone can host, picked
-  automatically by ping.
 - Thunderstore release.
 
 ## Not supported

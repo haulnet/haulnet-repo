@@ -56,11 +56,12 @@ internal static class WherePage
 
     // Game internals: MenuPageRegions.type (internal enum), MenuElementRegion.regionCode,
     // MenuTextInput.textCurrent / InputTextSet, MenuScrollBox.RecalculateScrollHeight.
+    // Null when a game update renamed them; Apply then leaves the hooks that use them off.
     private static readonly FieldInfo? PageTypeField = AccessTools.Field(typeof(MenuPageRegions), "type");
-    private static readonly AccessTools.FieldRef<MenuElementRegion, string> RegionCode =
-        AccessTools.FieldRefAccess<MenuElementRegion, string>("regionCode");
-    private static readonly AccessTools.FieldRef<MenuTextInput, string> TextCurrent =
-        AccessTools.FieldRefAccess<MenuTextInput, string>("textCurrent");
+    private static readonly AccessTools.FieldRef<MenuElementRegion, string>? RegionCode =
+        GameAccess.FieldRef<MenuElementRegion, string>("regionCode", "Haulnet cannot offer servers");
+    private static readonly AccessTools.FieldRef<MenuTextInput, string>? TextCurrent =
+        GameAccess.FieldRef<MenuTextInput, string>("textCurrent", "Ctrl+V and the address hint in Haulnet popups are off");
     private static readonly MethodInfo? InputTextSet = AccessTools.Method(typeof(MenuTextInput), "InputTextSet");
     private static readonly MethodInfo? RecalculateScroll = AccessTools.Method(typeof(MenuScrollBox), "RecalculateScrollHeight");
 
@@ -103,9 +104,9 @@ internal static class WherePage
     {
         var start = AccessTools.Method(typeof(MenuPageRegions), "Start");
         var pick = AccessTools.Method(typeof(MenuPageRegions), nameof(MenuPageRegions.PickRegion));
-        if (start == null || pick == null || PageTypeField == null)
+        if (start == null || pick == null || PageTypeField == null || RegionCode == null)
         {
-            Plugin.Log.LogError("MenuPageRegions.Start/PickRegion/type not found (game update?); Haulnet cannot offer servers, the game plays through Photon Cloud.");
+            Plugin.Log.LogError("MenuPageRegions.Start/PickRegion/type or MenuElementRegion.regionCode not found (game update?); Haulnet cannot offer servers, the game plays through Photon Cloud.");
             return;
         }
 
@@ -116,7 +117,7 @@ internal static class WherePage
         Available = true;
 
         var update = AccessTools.Method(typeof(MenuTextInput), "Update");
-        if (update != null && InputTextSet != null)
+        if (update != null && InputTextSet != null && TextCurrent != null)
         {
             harmony.Patch(update, postfix: new HarmonyMethod(typeof(WherePage), nameof(AfterTextInputUpdate)));
         }
@@ -340,7 +341,7 @@ internal static class WherePage
         element.textPing.alignment = TextAlignmentOptions.MidlineRight;
         element.textPing.color = hintColor;
         element.parentPage = page;
-        RegionCode(element) = code;
+        RegionCode!(element) = code;
         HaulnetObjects.Add(element.gameObject);
         pos.y -= RowStep;
         return element;
@@ -505,7 +506,7 @@ internal static class WherePage
         foreach (Transform child in page.transformStartPosition.parent)
         {
             var region = child.GetComponent<MenuElementRegion>();
-            if (region != null && !Untouched.Contains(child) && !(RegionCode(region) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal))
+            if (region != null && !Untouched.Contains(child) && !(RegionCode!(region) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal))
             {
                 child.gameObject.SetActive(_photonTab);
             }
@@ -520,7 +521,7 @@ internal static class WherePage
     // The page's coroutine fades its list in once Photon answered (alpha goes up); until then loading is shown.
     private static bool LoadingFinished(MenuPageRegions page) =>
         page.transformStartPosition.parent.Cast<Transform>()
-            .Any(t => !Untouched.Contains(t) && t.GetComponent<MenuElementRegion>() is { } r && !(RegionCode(r) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal));
+            .Any(t => !Untouched.Contains(t) && t.GetComponent<MenuElementRegion>() is { } r && !(RegionCode!(r) ?? "").StartsWith(CodePrefix, StringComparison.Ordinal));
 
     private static void Recalculate()
     {
@@ -1167,7 +1168,7 @@ internal static class WherePage
             return;
         }
 
-        var text = TextCurrent(__instance) ?? "";
+        var text = TextCurrent!(__instance) ?? "";
         var clean = new string(text.Where(c => !char.IsControl(c)).ToArray());
         if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.V))
         {
@@ -1182,7 +1183,7 @@ internal static class WherePage
 
         if (clean != text)
         {
-            TextCurrent(__instance) = clean;
+            TextCurrent!(__instance) = clean;
             InputTextSet!.Invoke(__instance, null);
         }
 
