@@ -18,20 +18,16 @@ edits.
   friends connect straight to it, like Minecraft's "Open to LAN": over the home network, or over the internet
   through [Radmin VPN](https://www.radmin-vpn.com/), [WireGuard](https://www.wireguard.com/) or a forwarded port.
 
-> [!WARNING]
-> **Pre-release.** Tested by two players on two PCs: on an official Haulnet server and "On my PC" over Radmin
-> VPN. There is no packaged release yet: build from source (below).
-
 ## Install
 
 Every player needs R.E.P.O. from Steam on Windows and
 [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
-Not tested yet: Linux, Proton and Steam Deck.
 
-There is no packaged release yet, so for now the mod is built from source (see
-[Building from source](#building-from-source)). A release will be a zip to extract into `BepInEx/plugins`, which gives
-`BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder next to it; Thunderstore is planned.
-Step by step: [haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
+A packaged download is a zip to extract into `BepInEx/plugins`, which gives `BepInEx/plugins/Haulnet/` with
+`Haulnet.dll` and the `server/` folder next to it. Downloads are published on the
+[Releases](https://github.com/haulnet/haulnet-repo/releases) page; until the first one, build the mod from source
+(see [Building from source](#building-from-source)). Thunderstore is planned. Step by step:
+[haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
 
 ## Usage
 
@@ -68,24 +64,22 @@ The **PHOTON CLOUD** tab is the normal game; friends without Haulnet can join th
 On a server, a private game works as usual (invite friends through Steam); a public game opens the game's own
 *Public game* page, so *Random matchmaking* and the *Server list* (with *Create new*) work on that server.
 
-**Friends:** accept the Steam invite or use *Join game* in the Steam friends list, as always (both tested by two
-players). The invite says where the game lives: on a server, or on the host's PC with all of the host's addresses
+**Friends:** accept the Steam invite or use *Join game* in the Steam friends list, as always. The invite says where the game lives: on a server, or on the host's PC with all of the host's addresses
 and the port; Haulnet uses the address that answers first and connects there. The lobby shows where you are
 connected. If the connection fails, the friend sees which addresses and port were tried, and the host sees who
-got no answer. After leaving, everything is back to normal. The game also has its own *Join friend* menu item;
-how it behaves with Haulnet is not verified yet.
+got no answer. After leaving, everything is back to normal.
 
 **Reaching the host's PC.** "On my PC" needs a network path from your friends to your PC; anything that connects
 the two PCs works:
 
-| Situation | What to do | Tested with two PCs |
-|---|---|---|
-| Friends far away: [Radmin VPN](https://www.radmin-vpn.com/) (free, Windows) | Everyone joins the same Radmin network first; the invite then contains your Radmin address. Radmin links the PCs directly when it can and shows Relay/TCP when it cannot. | yes |
-| Friends far away: [WireGuard](https://www.wireguard.com/) | Put your PC and your friends' PCs into one WireGuard network first; at least one of them needs an address the others can reach (a VPS or a forwarded port). The invite then contains your WireGuard address. | not yet |
-| Same home or LAN party | Allow the Windows Firewall prompt; friends use your local address from the invite. | not yet |
-| Both sides have IPv6 | Your router must let incoming UDP through to your PC. | not yet |
-| Router with a public IPv4 address | Forward UDP 27000-27002 (or your port and the next two) to your PC. | not yet |
-| None of these (most home connections) | Create the game on a Haulnet server instead: nobody needs to reach your PC. | yes |
+| Situation | What to do |
+|---|---|
+| Friends far away: [Radmin VPN](https://www.radmin-vpn.com/) (free, Windows) | Everyone joins the same Radmin network first; the invite then contains your Radmin address. Radmin links the PCs directly when it can and shows Relay/TCP when it cannot. |
+| Friends far away: [WireGuard](https://www.wireguard.com/) | Put your PC and your friends' PCs into one WireGuard network first; at least one of them needs an address the others can reach (a VPS or a forwarded port). The invite then contains your WireGuard address. |
+| Same home or LAN party | Allow the Windows Firewall prompt; friends use your local address from the invite. |
+| Both sides have IPv6 | Your router must let incoming UDP through to your PC. |
+| Router with a public IPv4 address | Forward UDP 27000-27002 (or your port and the next two) to your PC. |
+| None of these (most home connections) | Create the game on a Haulnet server instead: nobody needs to reach your PC. |
 
 Network: the server on your PC uses the port you enter and the next two (**UDP 27000-27002** by default);
 the address check between a friend and the host uses **UDP 47777** and is optional. Windows Firewall may ask

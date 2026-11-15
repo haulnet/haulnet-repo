@@ -51,9 +51,9 @@ tab lists, in this order:
 
 - On my PC: host a private game on your PC. Enter a UDP port (27000 by
   default); the server uses it and the next two. Friends need a network path
-  to your PC: Radmin VPN (https://www.radmin-vpn.com/, tested with two
-  PCs), or, not tested yet, WireGuard (https://www.wireguard.com/), the
-  same home network, IPv6 or a forwarded port.
+  to your PC: Radmin VPN (https://www.radmin-vpn.com/), WireGuard
+  (https://www.wireguard.com/), the same home network, IPv6 or a forwarded
+  port.
 - + Server by address...: type host or host:port of a server you or a
   friend runs.
 - This PC: shown when a haulnet-server runs on your PC.
@@ -64,8 +64,7 @@ tab lists, in this order:
   community), with ping. Nobody needs to reach your PC there.
 
 Friends join the usual way: accept the Steam invite or use "Join game" in
-the Steam friends list. The game's own "Join friend" menu item is not
-verified with Haulnet yet.
+the Steam friends list.
 
 
 WINDOWS FIREWALL AND PORTS
@@ -78,7 +77,7 @@ it, friends get no answer from your PC.
 
 - Hosting uses the port you enter and the next two: UDP 27000-27002 by
   default. Forward these on your router only if friends join over the
-  internet without Radmin VPN or WireGuard (not tested with two PCs yet).
+  internet without Radmin VPN or WireGuard.
 - UDP 47777: optional address check between a friend and the host.
 
 
