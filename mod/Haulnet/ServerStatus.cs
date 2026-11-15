@@ -8,8 +8,21 @@ internal sealed class ServerStatus
 {
     public bool Resolved { get; set; }
 
-    /// <summary>Round trip in ms (ICMP ping, or the TCP connect to the status endpoint), or -1.</summary>
-    public int PingMs { get; set; } = -1;
+    /// <summary>Best ICMP echo round trip in ms, or -1 when ICMP got no answer.</summary>
+    public int IcmpMs { get; set; } = -1;
+
+    /// <summary>
+    /// Ms from sending <c>GET /status</c> to the first byte of the answer, or -1. Not the TCP connect time: a VPN
+    /// client or transparent proxy on the path completes the handshake itself, which read a 120 ms server as 1 ms.
+    /// Only the server can send the answer, so this is never shorter than the real round trip, at worst longer.
+    /// </summary>
+    public int AnswerMs { get; set; } = -1;
+
+    /// <summary>Round trip shown and ranked: ICMP, else the status answer time, else -1.</summary>
+    public int PingMs => IcmpMs >= 0 ? IcmpMs : AnswerMs;
+
+    /// <summary>The ping comes from the status answer because ICMP got no answer.</summary>
+    public bool PingFromAnswer => IcmpMs < 0 && AnswerMs >= 0;
 
     /// <summary>
     /// The machine reported the game's UDP port unreachable: no server runs there, whatever the ping says. False

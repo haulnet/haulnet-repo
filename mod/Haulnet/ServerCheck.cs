@@ -53,7 +53,7 @@ internal static class ServerCheck
 
         status.Resolved = true;
         var probe = StartPortProbe(address, ip);
-        status.PingMs = Ping(ip);
+        status.IcmpMs = Ping(ip);
         ReadStatus(address, ip, statusPort, status);
         status.GamePortClosed = FinishPortProbe(address, probe, status.PingMs);
         return status;
@@ -164,7 +164,7 @@ internal static class ServerCheck
             }
             catch (Exception)
             {
-                // ICMP may be unavailable or blocked; the status endpoint's connect time is the fallback.
+                // ICMP may be unavailable or blocked; the status answer time is the fallback (ServerStatus.AnswerMs).
                 break;
             }
         }
@@ -219,15 +219,10 @@ internal static class ServerCheck
                 return;
             }
 
-            var connectMs = (int)Math.Max(1, stopwatch.ElapsedMilliseconds);
-            if (status.PingMs < 0)
-            {
-                status.PingMs = connectMs;
-            }
-
             client.SendTimeout = TimeoutMs;
             var stream = client.GetStream();
             var request = Encoding.ASCII.GetBytes($"GET /status HTTP/1.0\r\nHost: {address.HostForEndpoint}\r\nConnection: close\r\n\r\n");
+            var answer = Stopwatch.StartNew();
             stream.Write(request, 0, request.Length);
 
             // Stop as soon as the answer is complete instead of waiting for the server to close: behind some
@@ -259,6 +254,11 @@ internal static class ServerCheck
                 {
                     ended = true;
                     break;
+                }
+
+                if (total == 0)
+                {
+                    status.AnswerMs = (int)Math.Max(1, answer.ElapsedMilliseconds);
                 }
 
                 total += read;

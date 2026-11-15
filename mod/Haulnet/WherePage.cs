@@ -693,7 +693,7 @@ internal static class WherePage
         row.Status = chosen.status;
         row.Outcome = CityOutcome.Usable;
         row.Score = ranked[index].Score;
-        Plugin.Log.LogInfo($"{row.City.DisplayName}: {usable.Count} usable server(s), chose {chosen.server.Id} ({chosen.status!.Players} players, {chosen.status.PingMs} ms, stability penalty {ranked[index].PenaltyMs} ms).");
+        Plugin.Log.LogInfo($"{row.City.DisplayName}: {usable.Count} usable server(s), chose {chosen.server.Id} ({chosen.status!.Players} players, {chosen.status.PingMs} ms{(chosen.status.PingFromAnswer ? " from the status answer" : "")}, stability penalty {ranked[index].PenaltyMs} ms).");
     }
 
     private static void ShowStatus(Row row)
@@ -1134,7 +1134,7 @@ internal static class WherePage
             yield break;
         }
 
-        Plugin.Log.LogInfo($"Server by address {address}: ping {status?.PingMs ?? -1} ms, status endpoint {(status?.HasStatus == true ? "'" + status.Name + "' luxon " + status.Luxon : "absent")}.");
+        Plugin.Log.LogInfo($"Server by address {address}: ping {status?.PingMs ?? -1} ms{(status?.PingFromAnswer == true ? " from the status answer" : "")}, status endpoint {(status?.HasStatus == true ? "'" + status.Name + "' luxon " + status.Luxon : "absent")}.");
         _typedAddress = address;
         _typedText = _draft;
         Session.ChooseServer(address, status?.Name ?? "");
