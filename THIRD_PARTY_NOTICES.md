@@ -15,7 +15,7 @@ The LuxonServer binary contains these libraries; their notices and full license 
 | Luxon | commit `81458d7` | BSD-3-Clause | https://gitlab.com/luxon_project/Luxon |
 | Mbed TLS | 3.6.5 | Apache-2.0 (chosen from Apache-2.0 OR GPL-2.0-or-later) | https://github.com/Mbed-TLS/mbedtls |
 | spdlog | 1.17.0 | MIT | https://github.com/gabime/spdlog |
-| JSON for Modern C++ | 3.12.0 | MIT | https://github.com/nlohmann/json |
+| JSON for Modern C++ (with code by Bjoern Hoehrmann and Florian Loitsch, MIT; Google Abseil, Apache-2.0; Hedley, CC0-1.0) | 3.12.0 | MIT | https://github.com/nlohmann/json |
 | mini-yaml | as bundled | MIT | https://github.com/jimmiebergmann/mini-yaml |
 | sqlite3pp | 1.0.10 | MIT | https://github.com/iwongu/sqlite3pp |
 | magic_enum | 0.9.7 | MIT | https://github.com/Neargye/magic_enum |
