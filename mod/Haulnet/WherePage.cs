@@ -27,7 +27,8 @@ namespace Haulnet;
 /// <c>transformStartPosition</c> downwards, 32 units apart, into the same parent; both tabs share that space and
 /// the hidden tab's rows are inactive.</item>
 /// <item><c>MenuPageRegions.PickRegion</c> prefix: Haulnet rows carry codes <c>haulnet:*</c>, handled here.</item>
-/// <item><c>MenuTextInput.Update</c> postfix: Ctrl+V in our popups (the game's text field has no paste).</item>
+/// <item><c>MenuTextInput.Update</c> postfix: Ctrl+V in our popups (the game's text field has no paste) and the
+/// format hint in the empty address field (it has no placeholder either).</item>
 /// </list>
 /// The tab buttons are copies of the page's own "Back" button (<c>MenuButton</c> with the persistent
 /// <c>ExitPage</c> listener). If it cannot be found, both lists are shown one under the other with section titles.
@@ -78,8 +79,16 @@ internal static class WherePage
     private static MenuButton? _tabPhoton;
     private static bool _photonTab;
     private static MenuElementRegion? _addressRow;
-    private static MenuTextInput? _pasteInput;
+    // The text field of the popup Haulnet has open (Ctrl+V, hint), and the hint drawn while it is empty.
+    private static MenuTextInput? _popupInput;
+    private static string? _popupHint;
+    private static bool _popupRichText; // The field's own setting (off in the game's popup), restored after the hint.
+    private const string HintAlpha = "<alpha=#66>";
+    // Text typed last in this game session, working or not, so the player can fix a typo.
     private static string _draft = "";
+    // Address the popup sent the player to; remembered as LastAddress only when its lobby opens.
+    private static ServerAddress? _typedAddress;
+    private static string _typedText = "";
     private static bool _continuing;
     private static bool _busy;
     private static float _reorderedAt = float.NegativeInfinity;
@@ -113,7 +122,7 @@ internal static class WherePage
         }
         else
         {
-            Plugin.Log.LogWarning("MenuTextInput.Update not found; Ctrl+V in Haulnet popups is off.");
+            Plugin.Log.LogWarning("MenuTextInput.Update not found; Ctrl+V and the address hint in Haulnet popups are off.");
         }
     }
 
@@ -851,14 +860,14 @@ internal static class WherePage
             Text.PortBody, null,
             Plugin.Settings.HostPort.ToString(), Text.Create, null,
             upperOnly: false, maxLength: 5, allowEmpty: false,
-            text => OnPortEntered(page, text), null);
-        _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+            text => OnPortEntered(page, text), ForgetPopupInput);
+        TrackPopupInput(null);
         LocalizePopupBack(page);
     }
 
     private static void OnPortEntered(MenuPageRegions page, string text)
     {
-        _pasteInput = null;
+        ForgetPopupInput();
         text = (text ?? "").Trim();
         if (!int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var port)
             || port < 1024 || port > 65533)
@@ -911,6 +920,11 @@ internal static class WherePage
 
     // ---------- Server by address ----------
 
+    /// <summary>
+    /// Like Minecraft's "Direct Connection": the field holds the text typed earlier in this game session, otherwise
+    /// the last address that worked (<see cref="LobbyOpened"/>). The game's field has no placeholder, so a dimmed
+    /// example of the format is drawn while it is empty.
+    /// </summary>
     private static void OpenAddressPopup(MenuPageRegions page)
     {
         var initial = _draft.Length > 0 ? _draft : Plugin.Settings.LastAddress;
@@ -919,9 +933,28 @@ internal static class WherePage
             Text.AddressBody, null,
             initial, Text.Connect, null,
             upperOnly: false, maxLength: 100, allowEmpty: false,
-            text => OnAddressEntered(page, text), null);
-        _pasteInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+            text => OnAddressEntered(page, text), ForgetPopupInput);
+        TrackPopupInput(Text.AddressHint);
         LocalizePopupBack(page);
+    }
+
+    private static void TrackPopupInput(string? hint)
+    {
+        _popupInput = MenuPagePopUpTextInput.instance != null ? MenuPagePopUpTextInput.instance.menuTextInput : null;
+        _popupHint = hint;
+        _popupRichText = _popupInput != null && _popupInput.textMain != null && _popupInput.textMain.richText;
+    }
+
+    /// <summary>The popup closed: the game's own text popups must get neither our paste nor our hint.</summary>
+    private static void ForgetPopupInput()
+    {
+        if (_popupInput != null)
+        {
+            HideHint(_popupInput);
+        }
+
+        _popupInput = null;
+        _popupHint = null;
     }
 
     /// <summary>
@@ -1014,7 +1047,7 @@ internal static class WherePage
 
     private static void OnAddressEntered(MenuPageRegions page, string text)
     {
-        _pasteInput = null;
+        ForgetPopupInput();
         _draft = (text ?? "").Trim();
         if (!ServerAddress.TryParse(_draft, out var address, out var error))
         {
@@ -1022,7 +1055,6 @@ internal static class WherePage
             return;
         }
 
-        Plugin.Settings.LastAddress = _draft;
         if (page == null)
         {
             return;
@@ -1072,14 +1104,35 @@ internal static class WherePage
         }
 
         Plugin.Log.LogInfo($"Server by address {address}: ping {status?.PingMs ?? -1} ms, status endpoint {(status?.HasStatus == true ? "'" + status.Name + "' luxon " + status.Luxon : "absent")}.");
+        _typedAddress = address;
+        _typedText = _draft;
         Session.ChooseServer(address, status?.Name ?? "");
         Continue(page);
     }
 
-    /// <summary>Ctrl+V for our popups' text field. The game's text field only takes typed characters.</summary>
+    /// <summary>
+    /// A lobby opened on <paramref name="server"/>. If the player got there through "Server by address", the address
+    /// worked: remember it for the field. Before this, a typed address was stored as soon as it parsed, so a name that
+    /// never resolved stayed in the field for good.
+    /// </summary>
+    public static void LobbyOpened(ServerAddress server)
+    {
+        if (_typedAddress is { } typed && typed.SameAs(server) && _typedText.Length > 0)
+        {
+            Plugin.Settings.LastAddress = _typedText;
+        }
+
+        _typedAddress = null;
+        _typedText = "";
+    }
+
+    /// <summary>
+    /// Ctrl+V for our popups' text field (the game's field only takes typed characters), and the hint while it is
+    /// empty (the game's field has no placeholder).
+    /// </summary>
     private static void AfterTextInputUpdate(MenuTextInput __instance)
     {
-        if (_pasteInput == null || !ReferenceEquals(__instance, _pasteInput))
+        if (_popupInput == null || !ReferenceEquals(__instance, _popupInput))
         {
             return;
         }
@@ -1101,6 +1154,44 @@ internal static class WherePage
         {
             TextCurrent(__instance) = clean;
             InputTextSet!.Invoke(__instance, null);
+        }
+
+        if (clean.Length == 0 && _popupHint != null)
+        {
+            ShowHint(__instance, _popupHint);
+        }
+        else
+        {
+            HideHint(__instance);
+        }
+    }
+
+    /// <summary>
+    /// Draws the hint on screen only; <c>textCurrent</c> stays empty, so the game refuses Connect as for any empty
+    /// field. The game's <c>InputTextSet</c> rewrites <c>textMain</c> every frame, so the first typed character
+    /// replaces the hint. The game's field draws plain text, so rich text (for the dimming tag) is on only while the
+    /// hint shows; typed text is never parsed as tags. The cursor stays at the start, as for any empty field.
+    /// </summary>
+    private static void ShowHint(MenuTextInput input, string hint)
+    {
+        if (input.textMain == null)
+        {
+            return;
+        }
+
+        input.textMain.richText = true;
+        input.textMain.text = HintAlpha + hint;
+        if (input.textCursor != null)
+        {
+            input.textCursor.transform.position = input.textMain.transform.position + new Vector3(1f, 0f, 0f);
+        }
+    }
+
+    private static void HideHint(MenuTextInput input)
+    {
+        if (input != null && input.textMain != null && input.textMain.richText != _popupRichText)
+        {
+            input.textMain.richText = _popupRichText;
         }
     }
 

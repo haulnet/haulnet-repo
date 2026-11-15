@@ -11,6 +11,7 @@ ROW.PING	{ping} мс
 
 ADDRESS.TITLE	АДРЕСА СЕРВЕРА
 PORT.TITLE	UDP-ПОРТ
+ADDRESS.HINT	play.example.org або 192.168.1.10:27000
 ADDRESS.CONNECT	ПІДКЛЮЧИТИСЯ
 PORT.CREATE	СТВОРИТИ
 BACK	Назад
@@ -32,7 +33,7 @@ BANNED.HEADER	ТЕБЕ ЗАБАНЕНО
 INCOMPATIBLE.HEADER	HAULNET ВИМКНЕНО
 
 NO_SERVER.BODY	{city}: немає сервера, який відповідає на перевірку стану, приймає нові ігри та працює на сумісній версії.
-ADDRESS_INVALID.BODY	«{text}» не схоже на адресу сервера ({reason}).\nПотрібне ім'я або ім'я:порт, наприклад play.example.org або 203.0.113.5:27100.
+ADDRESS_INVALID.BODY	«{text}» не схоже на адресу сервера ({reason}).\nПотрібне ім'я або ім'я:порт, наприклад play.example.org або 192.168.1.10:27000.
 ADDRESS_ERROR.EMPTY	адреса порожня
 ADDRESS_ERROR.MISSING_BRACKET	бракує «]» в IPv6-адресі
 ADDRESS_ERROR.AFTER_BRACKET	зайві символи після «]»: {value}
