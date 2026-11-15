@@ -5,13 +5,18 @@
 R.E.P.O. always plays through Photon's servers, even when both players sit in the same room. Haulnet adds a
 **HAULNET** tab to the game's region page with more places to play:
 
-- **On my PC**: like "Open to LAN". A server starts inside your game on UDP 27000–27002. Friends reach you over
-  the same network, a VPN you already use (WireGuard, Radmin, ZeroTier, Tailscale), IPv6 or a forwarded port.
-- **Community servers**: one row per city from the public list at [servers.haulnet.cc](https://servers.haulnet.cc/),
-  with ping. Haulnet picks a working, compatible server of the city.
-- **Server by address**: type `host` or `host:port` of a server you or a friend runs.
+- **On my PC**: like "Open to LAN". A server starts inside your game on UDP 27000–27002. Friends need a network
+  path to your PC: a VPN you all use (WireGuard, Radmin, ZeroTier, Tailscale; tested with two PCs over Radmin VPN),
+  or, not tested yet, the same network, IPv6 or a forwarded port.
+- **+ Server by address**: type `host` or `host:port` of a server you or a friend runs.
+- **This PC**, when a haulnet-server runs on your PC, then your **saved and recent servers**, one row each with
+  the ping, or *full* or *updating*.
+- **One row per city**, e.g. *Europe [Moscow]*: Haulnet servers (official and community) from the public list at
+  [servers.haulnet.cc](https://servers.haulnet.cc/), with ping. Haulnet picks a working, compatible server of the
+  city. Nobody needs to reach your PC there.
 
-Friends join the usual way: accept the Steam invite. The invite tells their Haulnet where the game lives.
+Friends join the usual way: accept the Steam invite or use *Join game* in the Steam friends list. The invite tells
+their Haulnet where the game lives. The game's own *Join friend* menu item is not verified with Haulnet yet.
 
 ## Good to know
 
