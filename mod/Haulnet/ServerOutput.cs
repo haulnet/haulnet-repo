@@ -13,8 +13,8 @@ internal enum ServerLineLevel
 /// <summary>
 /// Reads LuxonServer's console output (spdlog text: <c>[time] [logger] [level] message</c>). The server has no other
 /// machine interface for its lifecycle, so the exact sentences matched here are part of the contract with the server:
-/// the fork never changes existing wording, it only adds lines. Kept free of game types so it can be tested against
-/// recorded output of every server version.
+/// a new server version is checked against recorded output before the mod bundles it. Kept free of game types so it
+/// can be tested against that output.
 /// </summary>
 internal static class ServerOutput
 {
