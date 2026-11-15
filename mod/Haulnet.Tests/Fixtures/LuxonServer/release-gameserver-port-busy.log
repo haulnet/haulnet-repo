@@ -1,6 +1,0 @@
-[2026-11-15 17:05:54.349] [ServerManager] [info] Config looks alright, setting up accordingly
-[2026-11-15 17:05:54.349] [ServerManager] [info] Setting up GameServer on port 28002
-[2026-11-15 17:05:54.349] [ServerManager] [info] Starting GameServer on port 28002
-[2026-11-15 17:05:54.350] [ServerManager] [error] Failed to bind GameServer to port 28002!
-Fatal error: Failed to bind GameServer to UDP port 28002: address in use
-Runtime destroyed.

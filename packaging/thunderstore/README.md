@@ -20,8 +20,7 @@ Friends join the usual way: accept the Steam invite. The invite tells their Haul
   region list, unchanged.
 - No Photon account, no admin rights, no changes to Windows settings or the `hosts` file.
 - Hosting "On my PC" runs [LuxonServer](https://github.com/niansa/LuxonServer) (BSD-3-Clause), an open-source
-  Photon-compatible server, built from Haulnet's fork [haulnet/LuxonServer](https://github.com/haulnet/LuxonServer)
-  and shipped in this package. Windows may ask whether to allow it on your network.
+  Photon-compatible server, shipped in this package. Windows may ask whether to allow it on your network.
 - Run your own public server: [haulnet-server](https://github.com/haulnet/haulnet-server).
 
 ## Links
