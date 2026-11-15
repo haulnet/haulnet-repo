@@ -78,6 +78,7 @@ internal static class Text
     // Server by address
     public static string AddressHeader => Get("ADDRESS.HEADER");
     public static string AddressBody => Get("ADDRESS.TITLE");
+    public static string AddressHint => Get("ADDRESS.HINT");
     public static string Connect => Get("ADDRESS.CONNECT");
     // Fallback only: the text popups normally use the game's own localized "Back" (WherePage.LocalizePopupBack).
     public static string Back => Get("BACK");

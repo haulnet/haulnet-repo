@@ -18,6 +18,9 @@ ROW.PING	{ping} ms
 #@max 16
 ADDRESS.TITLE	SERVER ADDRESS
 PORT.TITLE	UDP PORT
+# Dimmed example inside the empty address field, one line; drawn only, never submitted
+#@max 40
+ADDRESS.HINT	play.example.org or 192.168.1.10:27000
 # Buttons
 #@max 14
 ADDRESS.CONNECT	CONNECT
@@ -49,7 +52,7 @@ INCOMPATIBLE.HEADER	HAULNET IS OFF
 # {city} is a city name from the server list, in one language: keep it outside the sentence (no grammatical case).
 NO_SERVER.BODY	{city}: no server answers its status check, accepts new games and runs a compatible version.
 # {reason} is one of the ADDRESS_ERROR texts below.
-ADDRESS_INVALID.BODY	"{text}" is not a server address ({reason}).\nUse host or host:port, for example play.example.org or 203.0.113.5:27100.
+ADDRESS_INVALID.BODY	"{text}" is not a server address ({reason}).\nUse host or host:port, for example play.example.org or 192.168.1.10:27000.
 ADDRESS_ERROR.EMPTY	the address is empty
 ADDRESS_ERROR.MISSING_BRACKET	missing ']' in the IPv6 address
 ADDRESS_ERROR.AFTER_BRACKET	unexpected characters after ']': {value}

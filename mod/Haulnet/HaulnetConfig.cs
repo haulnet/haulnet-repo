@@ -41,7 +41,7 @@ internal sealed class HaulnetConfig
             "Servers",
             "LastAddress",
             "",
-            "Last address typed in \"Server by address\".");
+            "Last address from \"Server by address\" whose lobby opened; prefilled in that field next time.");
 
         // Empty means "the built-in list". BepInEx keeps whatever value is stored in the file, so storing the
         // built-in URL there would pin every install to it and a later move of the list would never reach players.
