@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
@@ -39,7 +41,6 @@ internal sealed class HostServer
     private readonly Queue<string> _lastLines = new();
 
     private Process? _process;
-    private volatile int _bindFailurePort;
     private volatile ServerState _state = ServerState.Stopped;
     private volatile ServerError _error = ServerError.None;
 
@@ -71,11 +72,17 @@ internal sealed class HostServer
 
             StopLocked();
             _lastLines.Clear();
-            _bindFailurePort = 0;
 
             if (!File.Exists(_executable))
             {
                 Fail(new ServerError(ServerProblem.FileMissing, 0, _executable));
+                return;
+            }
+
+            var busy = FindBusyPort();
+            if (busy != 0)
+            {
+                Fail(new ServerError(ServerProblem.PortInUse, busy, ""));
                 return;
             }
 
@@ -194,14 +201,7 @@ internal sealed class HostServer
                 break;
         }
 
-        // The server binds its ports exclusively and exits with code 1 when one is taken, naming the port.
-        var busyPort = ServerOutput.BindFailurePort(line!);
-        if (busyPort != 0)
-        {
-            _bindFailurePort = busyPort;
-        }
-
-        if (_state == ServerState.Starting && ServerOutput.IsReadyLine(line!))
+        if (_state == ServerState.Starting && ServerOutput.IsRunningLine(line!, _ports[0]))
         {
             _state = ServerState.Running;
             Plugin.Log.LogInfo("Host server is running.");
@@ -215,28 +215,22 @@ internal sealed class HostServer
             return; // Stopped on purpose.
         }
 
-        var code = 0;
-        try
-        {
-            // Without a timeout this also waits until the redirected output is read to its end, so the fatal line
-            // has been seen before the reason is chosen.
-            process.WaitForExit();
-            code = process.ExitCode;
-        }
-        catch (InvalidOperationException)
-        {
-        }
-
         string tail;
         lock (_lastLines)
         {
             tail = string.Join(" | ", _lastLines.ToArray());
         }
 
-        var busyPort = _bindFailurePort;
-        Fail(busyPort != 0
-            ? new ServerError(ServerProblem.PortInUse, busyPort, "")
-            : new ServerError(ServerProblem.Exited, code, tail));
+        var code = 0;
+        try
+        {
+            code = process.ExitCode;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        Fail(new ServerError(ServerProblem.Exited, code, tail));
     }
 
     private void Fail(ServerError error)
@@ -244,6 +238,46 @@ internal sealed class HostServer
         _error = error;
         _state = ServerState.Failed;
         Plugin.Log.LogError(error.ToString());
+    }
+
+    private int FindBusyPort()
+    {
+        // LuxonServer binds with address reuse, so a test bind can succeed although another server already
+        // listens there (both then receive half of the traffic). Ask Windows for the active listeners first.
+        try
+        {
+            var listening = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners();
+            foreach (var port in _ports)
+            {
+                foreach (var endpoint in listening)
+                {
+                    if (endpoint.Port == port)
+                    {
+                        return port;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogDebug($"Could not list UDP listeners: {e.Message}");
+        }
+
+        foreach (var port in _ports)
+        {
+            try
+            {
+                using var probe = new UdpClient(AddressFamily.InterNetwork);
+                probe.Client.ExclusiveAddressUse = true;
+                probe.Client.Bind(new IPEndPoint(IPAddress.Any, port));
+            }
+            catch (SocketException)
+            {
+                return port;
+            }
+        }
+
+        return 0;
     }
 }
 
