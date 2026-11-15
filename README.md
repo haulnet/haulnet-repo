@@ -23,10 +23,13 @@ edits.
 Every player needs R.E.P.O. from Steam on Windows and
 [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
 
-A packaged download is a zip to extract into `BepInEx/plugins`, which gives `BepInEx/plugins/Haulnet/` with
-`Haulnet.dll` and the `server/` folder next to it. Downloads are published on the
-[Releases](https://github.com/haulnet/haulnet-repo/releases) page; until the first one, build the mod from source
-(see [Building from source](#building-from-source)). Thunderstore is planned. Step by step:
+1. Install BepInExPack into the game folder and start the game once, so BepInEx creates its folders.
+2. Download [Haulnet.zip](https://github.com/haulnet/haulnet-repo/releases/latest/download/Haulnet.zip) from the
+   latest [release](https://github.com/haulnet/haulnet-repo/releases/latest) and extract it into
+   `REPO/BepInEx/plugins`. You get `BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder next to it.
+3. Start the game: `BepInEx/LogOutput.log` contains a line like `Haulnet <version> loaded.`
+
+Thunderstore is planned. Step by step, with Windows Firewall, updating and removing:
 [haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
 
 ## Usage
