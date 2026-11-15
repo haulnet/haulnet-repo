@@ -27,7 +27,7 @@ flowchart LR
 
 - The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
 - When you host "On my PC", it runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source
-  Photon-compatible server, inside your game session, and stops it when you leave.
+  Photon-compatible server (built from Haulnet's fork [haulnet/LuxonServer](https://github.com/haulnet/LuxonServer)), inside your game session, and stops it when you leave.
 - Joining players can use any of the host's addresses; the mod keeps all connections, including voice
   chat, on the address they used.
 

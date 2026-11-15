@@ -6,10 +6,10 @@ using Xunit;
 namespace Haulnet.Tests;
 
 /// <summary>
-/// What the mod writes for LuxonServer and reads back from it. The fixtures are recorded output of the server
-/// binaries the mod can meet: <c>v1.5-*</c> is the niansa v1.5 release the mod ships, <c>fork-a1a2-*</c> the
-/// haulnet/LuxonServer fork with "fatal bind" (A1) and "exclusive bind" (A2), both started on Windows with
-/// <c>host-config-28000.yml</c>, the file the mod wrote in the game for "On my PC" on UDP 28000.
+/// What the mod writes for the bundled LuxonServer and reads back from it. The fixtures are recorded output of the
+/// release the mod bundles (haulnet/LuxonServer v1.5-haulnet.1, MSVC), started on Windows with
+/// <c>host-config-28000.yml</c>, the file the mod wrote in the game for "On my PC" on UDP 28000: a normal start and
+/// a start with the NameServer (28000) or GameServer (28002) port held by another program.
 /// </summary>
 public class ServerContractTests
 {
@@ -27,7 +27,7 @@ public class ServerContractTests
     }
 
     // LuxonServer refuses to start on a key it does not know (ValidateAllowedKeys and the top-level switch in
-    // src/server_manager.cpp); these are the keys it accepted in v1.5 and in the fork.
+    // src/server_manager.cpp); these are the keys the bundled release accepts.
     [Fact]
     public void ConfigUsesOnlyKeysTheServerAccepts()
     {
@@ -61,47 +61,39 @@ public class ServerContractTests
         Assert.Contains("  - europe", Normalize(config)); // LuxonServer maps "europe" to Photon region "eu", HostServer.RegionCode.
     }
 
-    [Theory]
-    [InlineData("v1.5-start.log")]
-    [InlineData("fork-a1a2-start.log")]
-    public void EveryServerVersionReportsRunningOnceAndNoProblem(string fixture)
-    {
-        var lines = Lines(fixture);
-
-        Assert.Single(lines, l => ServerOutput.IsRunningLine(l, 28000));
-        Assert.DoesNotContain(lines, l => ServerOutput.Classify(l) is ServerLineLevel.Error or ServerLineLevel.Warning);
-        Assert.False(lines.Any(l => ServerOutput.IsRunningLine(l, 27000)), "another port's line must not count");
-    }
-
-    // The fork adds lines and never changes existing ones (docs/luxonserver-code-style.md, section 5), so the mod's
-    // "running" line still comes; "Server is ready" is new and not yet used by the mod.
     [Fact]
-    public void ForkKeepsTheLineTheModWaitsForAndAddsReady()
+    public void ReadyComesLastAndOnlyOnce()
     {
-        var lines = Lines("fork-a1a2-start.log");
-        var running = Array.FindIndex(lines, l => ServerOutput.IsRunningLine(l, 28000));
+        var lines = Lines("release-start.log");
 
-        Assert.True(running >= 0);
-        Assert.Contains("NameServer is listening on port 28000", lines[running + 1]);
-        Assert.EndsWith("Server is ready", lines[lines.Length - 1]);
-        Assert.DoesNotContain(Lines("v1.5-start.log"), l => l.Contains("Server is ready"));
+        Assert.Single(lines, ServerOutput.IsReadyLine);
+        Assert.True(ServerOutput.IsReadyLine(lines[lines.Length - 1]));
+        Assert.Contains(lines, l => l.Contains("NameServer is listening on port 28000"));
+        Assert.DoesNotContain(lines, l => ServerOutput.Classify(l) is ServerLineLevel.Error or ServerLineLevel.Warning);
+        Assert.DoesNotContain(lines, l => ServerOutput.BindFailurePort(l) != 0);
     }
 
-    // With the NameServer port taken, both versions print the "running" line before the failure (it comes before the
-    // bind). The mod therefore checks the ports itself first (HostServer.FindBusyPort); v1.5 then keeps running,
-    // the fork exits with code 1 and the reason on stderr, which the mod reports through the exit code.
+    // A taken port: the server logs the bind error, never "ready", and its last word is the fatal line naming the
+    // port (exit code 1). The NameServer port is bound last, the GameServer port first.
     [Theory]
-    [InlineData("v1.5-nameserver-port-busy.log", false)]
-    [InlineData("fork-a1a2-nameserver-port-busy.log", true)]
-    public void BusyPortIsLoggedAfterTheRunningLine(string fixture, bool fatalLine)
+    [InlineData("release-nameserver-port-busy.log", 28000)]
+    [InlineData("release-gameserver-port-busy.log", 28002)]
+    public void BusyPortIsNamedByTheFatalLine(string fixture, int port)
     {
         var lines = Lines(fixture);
-        var running = Array.FindIndex(lines, l => ServerOutput.IsRunningLine(l, 28000));
-        var failed = Array.FindIndex(lines, l => l.Contains("Failed to bind NameServer to port 28000!"));
 
-        Assert.True(running >= 0 && failed > running);
-        Assert.Equal(ServerLineLevel.Error, ServerOutput.Classify(lines[failed]));
-        Assert.Equal(fatalLine, lines.Any(l => l.StartsWith("Fatal error: Failed to bind NameServer to UDP port 28000: ", StringComparison.Ordinal)));
+        Assert.DoesNotContain(lines, ServerOutput.IsReadyLine);
+        Assert.Equal(new[] { port }, lines.Select(ServerOutput.BindFailurePort).Where(p => p != 0).ToArray());
+        Assert.Equal(ServerLineLevel.Error, ServerOutput.Classify(lines.Single(l => l.StartsWith("Fatal error: ", StringComparison.Ordinal))));
+    }
+
+    [Theory]
+    [InlineData("Fatal error: Failed to bind NameServer to UDP port 28000: Address in use", 28000)]
+    [InlineData("Fatal error: Config error at Foo: unknown top-level key: Foo", 0)]
+    [InlineData("[2026-11-15 17:05:54.350] [ServerManager] [error] Failed to bind GameServer to port 28002!", 0)]
+    public void OnlyTheFatalBindLineNamesAPort(string line, int port)
+    {
+        Assert.Equal(port, ServerOutput.BindFailurePort(line));
     }
 
     [Theory]
@@ -109,7 +101,7 @@ public class ServerContractTests
     [InlineData("[2026-11-15 16:45:26.153] [ServerManager] [warning] Tick time budget exhausted! 1 servers deferred to next tick.", "Ignored")]
     [InlineData("[2026-11-15 16:45:26.153] [ConfigParser] [warning] The 'address' key at Servers.NameServer[0] is deprecated.", "Warning")]
     [InlineData("[2026-11-15 16:45:26.153] [ServerManager] [critical] Disconnecting due to uncaught exception", "Error")]
-    [InlineData("Fatal error: Failed to bind NameServer to UDP port 28000: address in use", "Debug")]
+    [InlineData("Fatal error: Failed to bind NameServer to UDP port 28000: address in use", "Error")]
     public void LinesGoToTheLogAtTheirLevel(string line, string level)
     {
         Assert.Equal(level, ServerOutput.Classify(line).ToString());

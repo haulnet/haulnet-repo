@@ -1,0 +1,11 @@
+[2026-11-15 17:05:39.309] [ServerManager] [info] Config looks alright, setting up accordingly
+[2026-11-15 17:05:39.310] [ServerManager] [info] Setting up GameServer on port 28002
+[2026-11-15 17:05:39.310] [ServerManager] [info] Starting GameServer on port 28002
+[2026-11-15 17:05:39.311] [ServerManager] [info] GameServer is listening on port 28002
+[2026-11-15 17:05:39.311] [ServerManager] [info] Setting up MasterServer on port 28001
+[2026-11-15 17:05:39.311] [ServerManager] [info] Starting MasterServer on port 28001
+[2026-11-15 17:05:39.311] [ServerManager] [info] MasterServer is listening on port 28001
+[2026-11-15 17:05:39.311] [ServerManager] [info] Setting up NameServer on port 28000
+[2026-11-15 17:05:39.311] [ServerManager] [info] Starting NameServer on port 28000
+[2026-11-15 17:05:39.311] [ServerManager] [info] NameServer is listening on port 28000
+[2026-11-15 17:05:39.311] [ServerManager] [info] Server is ready
