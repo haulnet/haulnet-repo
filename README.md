@@ -8,9 +8,22 @@ on the host's own PC, like "Open to LAN" in Minecraft; on Haulnet servers (offic
 server by address. Friends accept the Steam invite as usual. No Photon account, no admin rights, no `hosts`
 edits.
 
+**Who it is for**
+
+- **Players far from Photon's regions.** The game offers only Photon Cloud's regions; when none is close, every
+  game has high ping. A Haulnet server can stand in any city (Moscow, Novosibirsk and Vladivostok today), and
+  anyone can add one closer to their players. Measured once from a home connection in Russia: Photon Cloud Europe
+  96 ms, the Haulnet server in Moscow 54 ms.
+- **People who want their own server.** Run [haulnet-server](https://github.com/haulnet/haulnet-server) on a VPS
+  or at home, keep it for friends or list it for everyone.
+- **Friends in the same room or on Radmin VPN.** With "On my PC" the host's PC is the server and friends connect
+  straight to it: over the home network, or from anywhere through [Radmin VPN](https://www.radmin-vpn.com/), a free
+  virtual local network that links the PCs directly when it can (tested with two PCs; the same home network not
+  yet).
+
 > [!WARNING]
-> **Pre-release.** Tested by two players on two PCs: on an official Haulnet server and "On my PC" over a VPN
-> (Radmin VPN). There is no packaged release yet: build from source (below).
+> **Pre-release.** Tested by two players on two PCs: on an official Haulnet server and "On my PC" over Radmin
+> VPN. There is no packaged release yet: build from source (below).
 
 ## How it works
 
@@ -23,7 +36,7 @@ flowchart LR
         S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, VPN, IPv6, forwarded port" --> S
+    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, IPv6, forwarded port" --> S
 ```
 
 - The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
@@ -79,7 +92,7 @@ the two PCs works:
 
 | Situation | What to do | Tested with two PCs |
 |---|---|---|
-| A VPN (Radmin VPN, ZeroTier, Tailscale, WireGuard...) | Everyone connects to the same VPN first; the invite contains your VPN address. | yes, Radmin VPN |
+| Friends far away: [Radmin VPN](https://www.radmin-vpn.com/) (free, Windows) | Everyone joins the same Radmin network first; the invite then contains your Radmin address. Radmin links the PCs directly when it can and shows Relay/TCP when it cannot. | yes |
 | Same home or LAN party | Allow the Windows Firewall prompt; friends use your local address from the invite. | not yet |
 | Both sides have IPv6 | Your router must let incoming UDP through to your PC. | not yet |
 | Router with a public IPv4 address | Forward UDP 27000-27002 (or your port and the next two) to your PC. | not yet |
@@ -162,7 +175,8 @@ in `BepInEx/cache/Haulnet` for offline use. To remove the mod, delete
 
 ## Planned
 
-- Connection help for players who host "On my PC" without a VPN (under consideration, not decided).
+- Connection help for players who host "On my PC" without Radmin VPN or a shared network (under consideration,
+  not decided).
 - Thunderstore release.
 
 ## Not supported
