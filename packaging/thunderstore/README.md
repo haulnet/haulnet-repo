@@ -30,7 +30,7 @@ their Haulnet where the game lives. The game's own *Join friend* menu item is no
 - No Photon account, no admin rights, no changes to Windows settings or the `hosts` file.
 - Hosting "On my PC" runs [LuxonServer](https://github.com/niansa/LuxonServer) (BSD-3-Clause), an open-source
   Photon-compatible server, shipped in this package. Windows may ask whether to allow it on your network.
-- Run your own public server: [haulnet-server](https://github.com/haulnet/haulnet-server).
+- Run your own server, for friends or for everyone: [haulnet-server](https://github.com/haulnet/haulnet-server).
 
 ## Links
 
@@ -38,6 +38,8 @@ their Haulnet where the game lives. The game's own *Join friend* menu item is no
 - Source and issues: [github.com/haulnet/haulnet-repo](https://github.com/haulnet/haulnet-repo)
 - Security reports: security@haulnet.cc
 
-Haulnet is an independent fan project, MIT-licensed. It is not affiliated with or endorsed by semiwork (developers
-of R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used only
-to describe compatibility. Haulnet is for people who own R.E.P.O. on Steam.
+Haulnet is an independent fan project. It is not affiliated with or endorsed by semiwork (developers of
+R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective owners and are used
+only to describe compatibility.
+
+MIT license. Haulnet is for people who own R.E.P.O. on Steam.

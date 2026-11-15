@@ -25,25 +25,16 @@ edits.
 > **Pre-release.** Tested by two players on two PCs: on an official Haulnet server and "On my PC" over Radmin
 > VPN. There is no packaged release yet: build from source (below).
 
-## How it works
+## Install
 
-"On my PC": the server runs inside the host's game, and friends connect straight to it.
+Every player needs R.E.P.O. from Steam on Windows and
+[BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
+Not tested yet: Linux, Proton and Steam Deck.
 
-```mermaid
-flowchart LR
-    subgraph host[Host PC]
-        GA[R.E.P.O. + Haulnet]
-        S[[Server inside the host's game]]
-        GA --> S
-    end
-    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, IPv6, forwarded port" --> S
-```
-
-- The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
-- When you host "On my PC", it runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source
-  Photon-compatible server, inside your game session, and stops it when you leave.
-- Joining players can use any of the host's addresses; the mod keeps all connections, including voice
-  chat, on the address they used.
+There is no packaged release yet, so for now the mod is built from source (see
+[Building from source](#building-from-source)). A release will be a zip to extract into `BepInEx/plugins`, which gives
+`BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder next to it; Thunderstore is planned.
+Step by step: [haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
 
 ## Usage
 
@@ -108,6 +99,37 @@ being removed.
 
 All players need the same game version, and everyone in a Haulnet game needs Haulnet.
 
+## How it works
+
+"On my PC": the server runs inside the host's game, and friends connect straight to it.
+
+```mermaid
+flowchart LR
+    subgraph host[Host PC]
+        GA[R.E.P.O. + Haulnet]
+        S[[Server inside the host's game]]
+        GA --> S
+    end
+    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, IPv6, forwarded port" --> S
+```
+
+- The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
+- When you host "On my PC", it runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source
+  Photon-compatible server, inside your game session, and stops it when you leave.
+- Joining players can use any of the host's addresses; the mod keeps all connections, including voice
+  chat, on the address they used.
+
+## Settings and removal
+
+Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
+(`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL (`RegistryUrl`;
+empty means the Haulnet list, a community can use its own list in the same format). The last downloaded server list
+is kept in `BepInEx/cache/Haulnet` for offline use.
+
+To remove the mod, delete `BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
+`doorstop_config.ini` and `.doorstop_version` from the game folder. Haulnet never changes game files or system
+settings.
+
 ## Building from source
 
 Requirements: a legal copy of R.E.P.O., [BepInEx 5](https://github.com/BepInEx/BepInEx/releases)
@@ -165,13 +187,6 @@ fix a language, copy `en.tsv` to `<code>.tsv` (for example `de.tsv` or `pt-BR.ts
 languages), translate the texts after the tab, run the checks above, and open a pull request with a screenshot of
 the region page and of one popup in that language. Missing keys fall back to English, so a partial translation
 works.
-
-Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
-(`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL
-(`RegistryUrl`; empty means the Haulnet list, a community can use its own list in the same format). The last downloaded server list is kept
-in `BepInEx/cache/Haulnet` for offline use. To remove the mod, delete
-`BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
-`doorstop_config.ini` and `.doorstop_version` from the game folder.
 
 ## Planned
 

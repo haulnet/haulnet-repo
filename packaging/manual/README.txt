@@ -86,7 +86,8 @@ UPDATE AND REMOVE
 
 - Update: replace the BepInEx\plugins\Haulnet folder with the new one.
 - Remove: delete BepInEx\plugins\Haulnet. Settings stay in
-  BepInEx\config\haulnet.repo.cfg until you delete it.
+  BepInEx\config\haulnet.repo.cfg and the cached server list in
+  BepInEx\cache\Haulnet until you delete them.
 
 Haulnet never changes game files or system settings.
 
@@ -101,8 +102,10 @@ PROBLEMS
 - Security reports: security@haulnet.cc
 
 
-Haulnet is an independent fan project, MIT-licensed (see LICENSE). It is not
-affiliated with or endorsed by semiwork (developers of R.E.P.O.) or Exit
-Games GmbH. "R.E.P.O." and "Photon" are trademarks of their respective
-owners and are used only to describe compatibility. Bundled components and
-their licenses: THIRD_PARTY_NOTICES.md and server\LuxonServer-LICENSE.txt.
+Haulnet is an independent fan project. It is not affiliated with or endorsed
+by semiwork (developers of R.E.P.O.) or Exit Games GmbH. "R.E.P.O." and
+"Photon" are trademarks of their respective owners and are used only to
+describe compatibility.
+
+MIT license (see LICENSE). Bundled components and their licenses:
+THIRD_PARTY_NOTICES.md and server\LuxonServer-LICENSE.txt.
