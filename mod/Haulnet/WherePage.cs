@@ -912,6 +912,9 @@ internal static class WherePage
         }
 
         Session.ChooseOnMyPc(port);
+        // The server reports a taken port by exiting within a few tens of milliseconds; wait for ready or failed so
+        // the player sees the reason here, not after the saves page.
+        Plugin.Server.WaitUntilReady(TimeSpan.FromSeconds(3));
         if (Plugin.Server.State == ServerState.Failed)
         {
             Popups.ShowNow(Text.ServerFailedHeader, Text.ServerFailedBody(Plugin.Server.Error));

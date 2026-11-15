@@ -50,23 +50,24 @@
   </ItemGroup>
 
   <!--
-    Bundled server: a pinned LuxonServer release (BSD-3-Clause, see THIRD_PARTY_NOTICES.md), downloaded at
-    build time and verified by SHA-256. It is shipped in the mod package under server/ and never committed.
+    Bundled server: a pinned release of Haulnet's LuxonServer fork (BSD-3-Clause, see THIRD_PARTY_NOTICES.md),
+    downloaded at build time and verified by SHA-256. It is shipped in the mod package under server/ and never committed.
   -->
   <PropertyGroup>
-    <LuxonVersion>v1.5</LuxonVersion>
+    <LuxonRepository>haulnet/LuxonServer</LuxonRepository>
+    <LuxonVersion>v1.5-haulnet.1</LuxonVersion>
     <LuxonAsset>luxon_server.msvc.release.exe</LuxonAsset>
-    <LuxonSha256>D5B272F49B21757D36094F30F986E4F4D2F1502EEC79BE33CE998EA19FFF3286</LuxonSha256>
+    <LuxonSha256>C7B0A0954B7A3080631D886A39C7D8AB2961695248DDB945C95319851E6D1E99</LuxonSha256>
     <LuxonLicenseSha256>87CA0810C9A251D379CA432FDCDE1B8168E4F172A474B46A32BE2386E022E766</LuxonLicenseSha256>
     <LuxonCacheDir>$(MSBuildThisFileDirectory)obj\luxon\$(LuxonVersion)\</LuxonCacheDir>
   </PropertyGroup>
 
   <Target Name="FetchLuxonServer" BeforeTargets="Build">
     <DownloadFile Condition="!Exists('$(LuxonCacheDir)luxon_server.exe')"
-                  SourceUrl="https://github.com/niansa/LuxonServer/releases/download/$(LuxonVersion)/$(LuxonAsset)"
+                  SourceUrl="https://github.com/$(LuxonRepository)/releases/download/$(LuxonVersion)/$(LuxonAsset)"
                   DestinationFolder="$(LuxonCacheDir)" DestinationFileName="luxon_server.exe" />
     <DownloadFile Condition="!Exists('$(LuxonCacheDir)LICENSE')"
-                  SourceUrl="https://raw.githubusercontent.com/niansa/LuxonServer/$(LuxonVersion)/LICENSE"
+                  SourceUrl="https://raw.githubusercontent.com/$(LuxonRepository)/$(LuxonVersion)/LICENSE"
                   DestinationFolder="$(LuxonCacheDir)" DestinationFileName="LICENSE" />
     <GetFileHash Files="$(LuxonCacheDir)luxon_server.exe" Algorithm="SHA256">
       <Output TaskParameter="Hash" PropertyName="_LuxonHash" />

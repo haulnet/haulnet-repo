@@ -1,0 +1,12 @@
+[2026-11-15 17:05:54.277] [ServerManager] [info] Config looks alright, setting up accordingly
+[2026-11-15 17:05:54.278] [ServerManager] [info] Setting up GameServer on port 28002
+[2026-11-15 17:05:54.278] [ServerManager] [info] Starting GameServer on port 28002
+[2026-11-15 17:05:54.279] [ServerManager] [info] GameServer is listening on port 28002
+[2026-11-15 17:05:54.279] [ServerManager] [info] Setting up MasterServer on port 28001
+[2026-11-15 17:05:54.279] [ServerManager] [info] Starting MasterServer on port 28001
+[2026-11-15 17:05:54.279] [ServerManager] [info] MasterServer is listening on port 28001
+[2026-11-15 17:05:54.279] [ServerManager] [info] Setting up NameServer on port 28000
+[2026-11-15 17:05:54.279] [ServerManager] [info] Starting NameServer on port 28000
+[2026-11-15 17:05:54.279] [ServerManager] [error] Failed to bind NameServer to port 28000!
+Fatal error: Failed to bind NameServer to UDP port 28000: address in use
+Runtime destroyed.
