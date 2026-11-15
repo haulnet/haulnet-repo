@@ -15,7 +15,7 @@ namespace Haulnet;
 /// Looks at a server before and while it is listed: resolves the name, measures the round trip and reads the
 /// optional haulnet-server status endpoint (<c>GET http://host:27080/status</c>, see the haulnet-server README).
 /// Runs on a worker thread; the menu polls the task. LuxonServer itself does not answer unknown UDP packets, so
-/// the game port cannot be pinged directly.
+/// the game port cannot be pinged directly; only a closed one shows (<see cref="StartPortProbe"/>).
 /// </summary>
 internal static class ServerCheck
 {
@@ -52,9 +52,78 @@ internal static class ServerCheck
         }
 
         status.Resolved = true;
+        var probe = StartPortProbe(address, ip);
         status.PingMs = Ping(ip);
         ReadStatus(address, ip, statusPort, status);
+        status.GamePortClosed = FinishPortProbe(address, probe, status.PingMs);
         return status;
+    }
+
+    /// <summary>
+    /// Sends a one-byte datagram to the game's UDP port; LuxonServer ignores it without logging. When nothing listens
+    /// there, the machine answers with ICMP "port unreachable", which the socket reports as an error on a later
+    /// receive. That error proves no server runs; its absence proves nothing, as many firewalls drop such packets
+    /// silently. Sent before the ping, read after the status check, so the answer usually waits already.
+    /// </summary>
+    private static (Socket Socket, Stopwatch Sent)? StartPortProbe(ServerAddress address, IPAddress ip)
+    {
+        Socket? socket = null;
+        try
+        {
+            socket = new Socket(ip.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            socket.Connect(new IPEndPoint(ip, address.EffectivePort));
+            var sent = Stopwatch.StartNew();
+            socket.Send(new byte[1]); // An empty datagram never left the game (Mono): the row kept its ping.
+            socket.Blocking = false;
+            return (socket, sent);
+        }
+        catch (Exception e)
+        {
+            socket?.Close();
+            Plugin.Log.LogDebug($"Server {address}: game port probe not sent ({e.Message}).");
+            return null;
+        }
+    }
+
+    /// <summary>True only when the system reported the game port unreachable (see <see cref="StartPortProbe"/>).</summary>
+    private static bool FinishPortProbe(ServerAddress address, (Socket Socket, Stopwatch Sent)? probe, int pingMs)
+    {
+        if (probe is not { } p)
+        {
+            return false;
+        }
+
+        using var socket = p.Socket;
+        // The ICMP answer takes about one round trip; allow for jitter, never the full check timeout.
+        var waitMs = pingMs >= 0 ? Math.Min(1000, 2 * pingMs + 100) : 500;
+        var buffer = new byte[1];
+        while (true)
+        {
+            try
+            {
+                socket.Receive(buffer);
+                return false; // Something answered on the game port: not closed.
+            }
+            catch (SocketException e) when (e.SocketErrorCode is SocketError.ConnectionReset or SocketError.ConnectionRefused)
+            {
+                Plugin.Log.LogInfo($"Server {address}: UDP {address.EffectivePort} unreachable, no game server runs there.");
+                return true;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                if (p.Sent.ElapsedMilliseconds >= waitMs)
+                {
+                    return false;
+                }
+
+                socket.Poll(20_000, SelectMode.SelectRead);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogDebug($"Server {address}: game port probe failed ({e.Message}).");
+                return false;
+            }
+        }
     }
 
     private static IPAddress? Resolve(string host)

@@ -24,6 +24,8 @@ NOT_FOUND.HEADER	СЕРВЕР НЕ ЗНАЙДЕНО
 FULL.HEADER	СЕРВЕР ЗАПОВНЕНИЙ
 UPDATING.HEADER	СЕРВЕР ОНОВЛЮЄТЬСЯ
 NO_ANSWER.HEADER	HAULNET: НЕМАЄ ПІДКЛЮЧЕННЯ
+NOT_RUNNING.HEADER	СЕРВЕР НЕ ЗАПУЩЕНО
+LOST.HEADER	HAULNET: ЗВ'ЯЗОК ВТРАЧЕНО
 SERVER_FAILED.HEADER	HAULNET: ПОМИЛКА СЕРВЕРА
 PORT_INVALID.HEADER	НЕПРАВИЛЬНИЙ ПОРТ
 FRIEND_FAILED.HEADER	HAULNET: ДРУГ НЕ ПІДКЛЮЧИВСЯ
@@ -43,6 +45,10 @@ NOT_FOUND.BODY	Ім'я {host} не знаходиться в DNS.
 FULL.BODY	{server} не приймає нові ігри (статус сервера: accepting: false).
 UPDATING.BODY	{server}: сервер оновлюється і поки не починає нові ігри. Спробуй за кілька хвилин.
 NO_ANSWER.BODY	Немає відповіді від {server} по UDP {port}.
+NOT_RUNNING.BODY	{server}: комп'ютер відповідає, але ігровий сервер на UDP {port} не запущено. Попроси власника запустити його або перевір адресу.
+LOST.BODY	Зв'язок із сервером втрачено: його зупинено або він став недоступним.\n{server}\nКоли він знову запрацює, створи гру або підключися знову.
+LOST.BODY_HOST_PC	Зв'язок із ПК {host} втрачено: гра хоста закрилася або його ПК став недоступним.
+LOST.BODY_HOST_PC_UNNAMED	Зв'язок із ПК хоста втрачено: гра хоста закрилася або його ПК став недоступним.
 SERVER_FAILED.BODY	Не вдалося запустити сервер на твоєму ПК.\n\n{reason}
 SERVER_ERROR.FILE_MISSING	Немає файлу сервера: {path}. Перевстанови Haulnet.
 SERVER_ERROR.PORT_IN_USE	UDP-порт {port} уже зайнятий іншою програмою.

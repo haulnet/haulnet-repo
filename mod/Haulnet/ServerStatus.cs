@@ -11,6 +11,12 @@ internal sealed class ServerStatus
     /// <summary>Round trip in ms (ICMP ping, or the TCP connect to the status endpoint), or -1.</summary>
     public int PingMs { get; set; } = -1;
 
+    /// <summary>
+    /// The machine reported the game's UDP port unreachable: no server runs there, whatever the ping says. False
+    /// also when the answer is unknown (a firewall dropped the probe).
+    /// </summary>
+    public bool GamePortClosed { get; set; }
+
     /// <summary>The haulnet-server status endpoint answered with 200.</summary>
     public bool HasStatus { get; set; }
 

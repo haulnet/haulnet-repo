@@ -105,6 +105,13 @@ internal static class Text
     // Connection failures
     public static string NoAnswerHeader => Get("NO_ANSWER.HEADER");
     public static string NoAnswerBody(string server, int port) => Get("NO_ANSWER.BODY", ("server", server), ("port", port));
+    public static string NotRunningHeader => Get("NOT_RUNNING.HEADER");
+    public static string NotRunningBody(string server, int port) => Get("NOT_RUNNING.BODY", ("server", server), ("port", port));
+    public static string LostHeader => Get("LOST.HEADER");
+    public static string LostServerBody(string server) => Get("LOST.BODY", ("server", server));
+    public static string LostFriendPcBody(string host) => string.IsNullOrWhiteSpace(host)
+        ? Get("LOST.BODY_HOST_PC_UNNAMED")
+        : Get("LOST.BODY_HOST_PC", ("host", host));
 
     // On my PC
     public static string ServerFailedHeader => Get("SERVER_FAILED.HEADER");
