@@ -2,9 +2,9 @@ HAULNET for R.E.P.O.
 ====================
 
 Play R.E.P.O. with friends on a server you control, instead of Photon Cloud:
-on your own PC (like "Open to LAN"), on a community server, or on any server
-by address. Until you pick a Haulnet place, the game plays exactly as without
-the mod.
+on your own PC (like "Open to LAN"), on Haulnet servers (official and
+community), or on any server by address. Until you pick a Haulnet place, the
+game plays exactly as without the mod.
 
 Full guide: https://haulnet.cc/docs/install/
 
@@ -40,16 +40,25 @@ FIRST RUN
 ---------
 
 Open Private game or Public game: the region page now has two tabs,
-HAULNET and PHOTON CLOUD (the game's own regions, unchanged).
+HAULNET and PHOTON CLOUD (the game's own regions, unchanged). The HAULNET
+tab lists, in this order:
 
 - On my PC: host a private game on your PC. Enter a UDP port (27000 by
-  default); the server uses it and the next two. Friends reach your PC over
-  the same network, a VPN you already use, IPv6 or a forwarded port.
-- Community servers: one row per city, with ping.
+  default); the server uses it and the next two. Friends need a network path
+  to your PC: a VPN you all use (tested with two PCs over Radmin VPN), or,
+  not tested yet, the same network, IPv6 or a forwarded port.
 - + Server by address...: type host or host:port of a server you or a
   friend runs.
+- This PC: shown when a haulnet-server runs on your PC.
+- Your saved servers, then the servers you played on recently, one row
+  each with name or address; the right side shows the ping, or "full" or
+  "updating".
+- One row per city, e.g. Europe [Moscow]: Haulnet servers (official and
+  community), with ping. Nobody needs to reach your PC there.
 
-Friends join the usual way: accept the Steam invite or use Join friend.
+Friends join the usual way: accept the Steam invite or use "Join game" in
+the Steam friends list. The game's own "Join friend" menu item is not
+verified with Haulnet yet.
 
 
 WINDOWS FIREWALL AND PORTS
@@ -62,7 +71,7 @@ no answer from your PC.
 
 - Hosting uses the port you enter and the next two: UDP 27000-27002 by
   default. Forward these on your router only if friends join over the
-  internet without a VPN.
+  internet without a VPN (not tested with two PCs yet).
 - UDP 47777: optional address check between a friend and the host.
 
 
