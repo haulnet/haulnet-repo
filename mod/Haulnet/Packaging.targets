@@ -57,7 +57,7 @@
            Text="packaging/thunderstore/manifest.json must contain &quot;version_number&quot;: &quot;0.0.0&quot; as the placeholder." />
 
     <ItemGroup>
-      <_ServerFiles Include="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt" />
+      <_ServerFiles Include="$(OutDir)server\luxon_server.exe;$(OutDir)server\LuxonServer-LICENSE.txt;$(OutDir)server\LuxonServer-THIRD_PARTY_NOTICES.txt" />
       <_Licenses Include="$(RepoRoot)LICENSE;$(RepoRoot)THIRD_PARTY_NOTICES.md" />
       <_StoreExtras Include="$(ThunderstoreSourceDir)icon.png;$(ThunderstoreSourceDir)README.md" />
       <_StoreExtras Include="$(RepoRoot)CHANGELOG.md" Condition="Exists('$(RepoRoot)CHANGELOG.md')" />
