@@ -8,6 +8,17 @@ on the host's own PC, like "Open to LAN" in Minecraft; on Haulnet servers (offic
 server by address. Friends accept the Steam invite as usual. No Photon account, no admin rights, no `hosts`
 edits.
 
+**Who it is for**
+
+- **Players far from Photon's regions.** The game offers only Photon Cloud's regions; when none is close, every
+  game has high ping. A Haulnet server can stand in any city (Moscow, Novosibirsk and Vladivostok today), and
+  anyone can add one closer to their players. Measured once from a home connection in Russia: Photon Cloud Europe
+  96 ms, the Haulnet server in Moscow 54 ms.
+- **People who want their own server.** Run [haulnet-server](https://github.com/haulnet/haulnet-server) on a VPS
+  or at home, keep it for friends or list it for everyone.
+- **Friends in the same room or on the same VPN.** With "On my PC" the host's PC is the server and friends connect
+  straight to it, with no internet server in between (tested over Radmin VPN; the same home network not yet).
+
 > [!WARNING]
 > **Pre-release.** Tested by two players on two PCs: on an official Haulnet server and "On my PC" over a VPN
 > (Radmin VPN). There is no packaged release yet: build from source (below).

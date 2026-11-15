@@ -6,6 +6,10 @@ on your own PC (like "Open to LAN"), on Haulnet servers (official and
 community), or on any server by address. Until you pick a Haulnet place, the
 game plays exactly as without the mod.
 
+Useful when no Photon Cloud region is close to you (a Haulnet server can
+stand in any city), when you want a server of your own, and when friends sit
+in the same room or share a VPN: then the host's PC is the server.
+
 Full guide: https://haulnet.cc/docs/install/
 
 
