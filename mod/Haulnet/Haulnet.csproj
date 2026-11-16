@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Haulnet</AssemblyName>
     <RootNamespace>Haulnet</RootNamespace>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
