@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Checks that do not need the game (AGENTS.md): the translation loader, the translation files, the
-       haulnet-server status answer and its parser, the server ranking, the monitor's uptime document, and the
-       config the mod writes for LuxonServer and the output it reads back (recorded from each server version). -->
+       haulnet-server status answer and its parser, the server ranking, the monitor's uptime document, the
+       config the mod writes for LuxonServer and the output it reads back (recorded from each server version), and
+       the files a release is made from (manifest, icon, changelog, version). -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -24,6 +25,9 @@
     <Compile Include="..\Haulnet\ServerOutput.cs" Link="ServerOutput.cs" />
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\Haulnet\Localization\*.tsv" Link="Localization\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- What a release is made from (PackagingInputsTests). -->
+    <None Include="..\..\packaging\thunderstore\*;..\..\CHANGELOG.md;..\Haulnet\Haulnet.csproj;..\Haulnet\Plugin.cs"
+          Link="Packaging\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

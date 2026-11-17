@@ -1,0 +1,73 @@
+name: Bug report
+description: Something in Haulnet does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A message Haulnet shows may already be explained at
+        [haulnet.cc/docs/troubleshooting](https://haulnet.cc/docs/troubleshooting/).
+        Haulnet is for people who own R.E.P.O. on Steam; reports about unlicensed copies are closed.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: The game version from the main menu and the Haulnet version from the line "Haulnet <version> loaded." in BepInEx/LogOutput.log
+      placeholder: "Game v0.5.1, Haulnet 0.4.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: place
+    attributes:
+      label: Where the game lives
+      options:
+        - On my PC
+        - A Haulnet server from the city rows
+        - Server by address
+        - Photon Cloud (with Haulnet installed)
+        - Before any of that (the mod does not load, no HAULNET tab)
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Who has the problem
+      options:
+        - The host
+        - A friend who joins
+        - Everyone
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: How the friend reaches the host's PC (only for "On my PC")
+      options:
+        - Same home network
+        - Radmin VPN
+        - WireGuard
+        - IPv6
+        - Something else (say what below)
+        - Not "On my PC"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Quote the message on screen if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Private game, HAULNET tab, On my PC, port 27000
+        2. Invite a friend through Steam
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Drag and drop BepInEx/LogOutput.log from the game folder of every affected player. The log contains your PC's network addresses; remove them if you prefer.

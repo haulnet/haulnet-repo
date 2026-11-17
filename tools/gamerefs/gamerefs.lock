@@ -1,0 +1,4 @@
+# The reference assemblies the release workflow builds against: a tag in the project's private store, named after
+# the Steam build of the game they were made from. After a game update, make new ones (README, "Releases"), push
+# them under a new tag and change this line in a pull request.
+GAMEREFS_TAG=b26407089

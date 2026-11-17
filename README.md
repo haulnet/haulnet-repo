@@ -110,8 +110,23 @@ plugin; with `DeployToGame` set to `true` the result is copied to `<GameDir>/Bep
 and BepInEx assemblies are referenced from your installation and are never part of this repository. The tests do
 not need the game.
 
-`dotnet build mod/Haulnet -c Release -t:Package` writes the release packages to `artifacts/<version>/`: the zip
-for manual install, the Thunderstore package and `SHA256SUMS`.
+### Releases
+
+A release is a version tag. Set the version in `mod/Haulnet/Haulnet.csproj` and `Plugin.cs`, move the
+"Unreleased" notes in [CHANGELOG.md](CHANGELOG.md) under that version, merge, and push the tag `vX.Y.Z`. The
+[release workflow](.github/workflows/release.yml) builds the packages, takes the release notes from the changelog
+and publishes the GitHub release: the zip for manual install, the Thunderstore package
+(`Haulnet-<version>-thunderstore.zip`) and `SHA256SUMS`. Locally, `dotnet build mod/Haulnet -c Release -t:Package`
+writes the same packages to `artifacts/<version>/`.
+
+The workflow has no game installation. It compiles against reference assemblies: copies of the assemblies the mod
+references in which every method body is removed, so they hold names and signatures and no code. A maintainer
+makes them with [`tools/gamerefs`](tools/gamerefs) from their own installation after each game update; they stay
+in a private repository and are never published:
+
+```bash
+dotnet run --project tools/gamerefs -c Release -- "<GameDir>" <empty folder> --game-version <version in the main menu>
+```
 
 ## Translations
 
@@ -128,7 +143,7 @@ to English, so a partial translation works.
 
 - Bugs and ideas: [issues](https://github.com/haulnet/haulnet-repo/issues). Attach `BepInEx/LogOutput.log` and
   say what you did.
-- Security reports: [security@haulnet.cc](mailto:security@haulnet.cc).
+- Security reports: [security@haulnet.cc](mailto:security@haulnet.cc), see [SECURITY.md](SECURITY.md).
 
 ## Not supported
 
