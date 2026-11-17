@@ -12,6 +12,8 @@ adheres to [Semantic Versioning](https://semver.org/).
   addresses of the host's PC itself, so a port forwarded on a router is never tried.
 - The Thunderstore package is attached to every GitHub release as `Haulnet-<version>-thunderstore.zip`, next to
   the zip for manual install.
+- Releases are built by the project's release workflow with a fixed compiler version; the release notes name the
+  game version a release was built for.
 
 ## [0.4.1] - 2026-11-16
 

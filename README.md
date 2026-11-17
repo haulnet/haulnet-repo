@@ -94,7 +94,8 @@ remove the mod, delete `BepInEx/plugins/Haulnet`.
 ## Building from source
 
 Requirements: a legal copy of R.E.P.O. with [BepInEx 5](https://github.com/BepInEx/BepInEx/releases) installed,
-and the [.NET SDK](https://dotnet.microsoft.com/download) 8 or newer.
+and the [.NET SDK](https://dotnet.microsoft.com/download/dotnet/8.0) 8.0 (`global.json` names the version, so
+local builds and releases use the same compiler).
 
 1. Copy `mod/Directory.Build.user.props.example` to `mod/Directory.Build.user.props` and set `GameDir` to the
    folder that contains `REPO.exe`.
@@ -112,12 +113,12 @@ not need the game.
 
 ### Releases
 
-A release is a version tag. Set the version in `mod/Haulnet/Haulnet.csproj` and `Plugin.cs`, move the
-"Unreleased" notes in [CHANGELOG.md](CHANGELOG.md) under that version, merge, and push the tag `vX.Y.Z`. The
-[release workflow](.github/workflows/release.yml) builds the packages, takes the release notes from the changelog
-and publishes the GitHub release: the zip for manual install, the Thunderstore package
-(`Haulnet-<version>-thunderstore.zip`) and `SHA256SUMS`. Locally, `dotnet build mod/Haulnet -c Release -t:Package`
-writes the same packages to `artifacts/<version>/`.
+To release, set the version in `mod/Haulnet/Haulnet.csproj` and `Plugin.cs`, move the "Unreleased" notes in
+[CHANGELOG.md](CHANGELOG.md) under that version and merge. Then run the
+[release workflow](.github/workflows/release.yml) on `main`: it builds the packages, takes the release notes from
+the changelog and creates a draft release with the zip for manual install, the Thunderstore package
+(`Haulnet-<version>-thunderstore.zip`) and `SHA256SUMS`. Publishing the draft creates the tag `vX.Y.Z`. Locally,
+`dotnet build mod/Haulnet -c Release -t:Package` writes the same packages to `artifacts/<version>/`.
 
 The workflow has no game installation. It compiles against reference assemblies: copies of the assemblies the mod
 references in which every method body is removed, so they hold names and signatures and no code. A maintainer
@@ -143,7 +144,7 @@ to English, so a partial translation works.
 
 - Bugs and ideas: [issues](https://github.com/haulnet/haulnet-repo/issues). Attach `BepInEx/LogOutput.log` and
   say what you did.
-- Security reports: [security@haulnet.cc](mailto:security@haulnet.cc), see [SECURITY.md](SECURITY.md).
+- Security reports: privately, see [SECURITY.md](SECURITY.md).
 
 ## Not supported
 
