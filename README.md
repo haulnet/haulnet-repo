@@ -1,22 +1,46 @@
-# Haulnet
+<p align="center">
+  <a href="https://haulnet.cc/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://haulnet.cc/assets/haulnet-logo-on-dark.svg">
+      <img src="https://haulnet.cc/assets/haulnet-logo-on-light.svg" alt="Haulnet" height="64">
+    </picture>
+  </a>
+</p>
 
-**Play R.E.P.O. with friends on a server you control, instead of Photon Cloud.**
+<p align="center"><b>Play R.E.P.O. with friends on a server you control.</b></p>
 
-R.E.P.O. has no local mode: even two players on the same network play through Photon's servers, and
-players far from Photon's data centers get high ping. Haulnet adds three ways to play without Photon Cloud:
-on the host's own PC, like "Open to LAN" in Minecraft; on Haulnet servers (official and community); or on any
-server by address. Friends accept the Steam invite as usual. No Photon account, no admin rights, no `hosts`
-edits.
+<p align="center">
+  <a href="https://github.com/haulnet/haulnet-repo/releases/latest"><img src="https://img.shields.io/github/v/release/haulnet/haulnet-repo?label=release&color=E5484D" alt="Latest release"></a>
+  <a href="https://github.com/haulnet/haulnet-repo/releases"><img src="https://img.shields.io/github/downloads/haulnet/haulnet-repo/total?label=downloads&color=5B6573" alt="Downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/haulnet/haulnet-repo?color=5B6573" alt="MIT license"></a>
+</p>
 
-**Who it is for**
+<p align="center">
+  <a href="https://haulnet.cc/">Website</a> ·
+  <a href="https://haulnet.cc/docs/install/">Install</a> ·
+  <a href="https://haulnet.cc/docs/play/">Play</a> ·
+  <a href="https://haulnet.cc/docs/server/">Run a server</a> ·
+  <a href="https://haulnet.cc/docs/troubleshooting/">Troubleshooting</a> ·
+  <a href="https://servers.haulnet.cc/">Server status</a>
+</p>
 
-- **Players far from Photon's regions.** The game offers only Photon Cloud's regions; when none is close, every
-  game has high ping. A Haulnet server can stand in any city, and anyone can add one closer to their players.
-- **People who want their own server.** Run [haulnet-server](https://github.com/haulnet/haulnet-server) on a VPS
-  or at home, keep it for friends or list it for everyone.
-- **Direct play from your PC.** R.E.P.O. has no local mode. With "On my PC" the host's PC is the server and
-  friends connect straight to it, like Minecraft's "Open to LAN": over the home network, or over the internet
-  through [Radmin VPN](https://www.radmin-vpn.com/), [WireGuard](https://www.wireguard.com/) or a forwarded port.
+R.E.P.O. runs every online game through Photon Cloud, even when friends sit on the same network. Haulnet is a free,
+open-source mod that lets the game live on your own PC, on a Haulnet server or on any server by address instead.
+No Photon account, no admin rights, and nothing changes until you pick a Haulnet place.
+
+## Where you can play
+
+Haulnet adds a **HAULNET** tab to the game's region page, next to **PHOTON CLOUD** (the game's own regions,
+unchanged):
+
+| Place | What it is |
+|---|---|
+| **On my PC** | Your game starts the server and friends connect straight to your PC, like Minecraft's "Open to LAN": over the home network, or over the internet through [Radmin VPN](https://www.radmin-vpn.com/) or [WireGuard](https://www.wireguard.com/). |
+| **Haulnet servers** | Official and community servers, one row per city with its ping. Nobody needs to reach your PC. Live list: [servers.haulnet.cc](https://servers.haulnet.cc/). |
+| **Server by address** | Any server you or a friend runs with [haulnet-server](https://github.com/haulnet/haulnet-server); it does not need to be listed anywhere. |
+
+Friends join the usual way: they accept the Steam invite or use *Join game* in the Steam friends list, and their
+Haulnet connects to wherever the game lives. Lobby password, kick and ban work in Haulnet games too.
 
 ## Install
 
@@ -24,79 +48,28 @@ Every player needs R.E.P.O. from Steam on Windows and
 [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
 
 1. Install BepInExPack into the game folder and start the game once, so BepInEx creates its folders.
-2. Download [Haulnet.zip](https://github.com/haulnet/haulnet-repo/releases/latest/download/Haulnet.zip) from the
-   latest [release](https://github.com/haulnet/haulnet-repo/releases/latest) and extract it into
-   `REPO/BepInEx/plugins`. You get `BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder next to it.
+2. Download [Haulnet.zip](https://github.com/haulnet/haulnet-repo/releases/latest/download/Haulnet.zip) and extract
+   it into `REPO/BepInEx/plugins`. You get `BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder
+   next to it.
 3. Start the game: `BepInEx/LogOutput.log` contains a line like `Haulnet <version> loaded.`
 
-Thunderstore is planned. Step by step, with Windows Firewall, updating and removing:
-[haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
+Step by step, with Windows Firewall, updating and removing: [haulnet.cc/docs/install](https://haulnet.cc/docs/install/).
 
-## Usage
+## Play
 
-Every player installs the mod. Out of the box nothing changes: the game plays through Photon Cloud as usual.
+1. Open *Private game* or *Public game*. The region page now has the two tabs.
+2. On the **HAULNET** tab, pick where the game lives, exactly like picking a region.
+3. Invite friends through Steam as always.
 
-Haulnet adds two tabs to the game's region page, which both *Private game* and *Public game* open:
-**HAULNET** and **PHOTON CLOUD** (the game's own regions, unchanged). The tab you used last opens next time. Pick
-where the game lives, exactly like picking a region.
+Everyone in a Haulnet game needs Haulnet and the same game version; friends without it can still join you on the
+**PHOTON CLOUD** tab. "On my PC" uses the UDP port you enter and the next two (27000–27002 by default), and
+Windows Firewall may ask whether `luxon_server` and R.E.P.O. may use the network: allow it.
 
-The HAULNET tab lists your own places first and the public cities last, in this order:
-
-- **On my PC** (private games only): like Minecraft's "Open to LAN". Enter the UDP port (the last one is
-  prefilled, 27000 by default); a server starts inside your game on that port and the next two. The lobby shows
-  "Haulnet · on your PC · UDP 27000-27002". How friends reach your PC is up to you (see *Reaching the host's PC*
-  below); Haulnet does not guess. Invite friends through Steam; the invite carries your addresses and port.
-  The server stops when you return to the main menu.
-- **+ Server by address...**: type `host` or `host:port` (port 27000 if not given; Ctrl+V pastes). The last
-  address whose game opened is prefilled. Use it for a server you run yourself or one a friend told you about;
-  it does not need to be listed anywhere.
-- **This PC · *name***: shown when a `haulnet-server` runs on your own PC.
-- **Saved and recent servers**: one plain row each, with the server's name or address: first the servers you
-  saved in the config file, then up to 5 you played on recently. The right side shows the ping, *full*,
-  *updating*, or *—* when the server does not answer.
-- **One row per city**, e.g. *Europe [Moscow]*: the Haulnet servers (official and community) of the public
-  [server list](https://servers.haulnet.cc/v1/servers.json), with ping. Haulnet checks every
-  server of the city and uses one that answers, accepts games and runs a compatible version: for a private game
-  the least busy of the closest ones, for a public game the busiest one, so public players of a city meet.
-  Cities are ordered by quality, closest and most stable first: stability is the uptime over the last day and
-  week measured by the public server monitor, named in the list. A server with recent outages moves down and is
-  picked less often; without monitor data the order follows ping alone.
-
-The **PHOTON CLOUD** tab is the normal game; friends without Haulnet can join there too.
-
-On a server, a private game works as usual (invite friends through Steam); a public game opens the game's own
-*Public game* page, so *Random matchmaking* and the *Server list* (with *Create new*) work on that server.
-
-**Friends:** accept the Steam invite or use *Join game* in the Steam friends list, as always. The invite says where the game lives: on a server, or on the host's PC with all of the host's addresses
-and the port; Haulnet uses the address that answers first and connects there. The lobby shows where you are
-connected. If the connection fails, the friend sees which addresses and port were tried, and the host sees who
-got no answer. After leaving, everything is back to normal.
-
-**Reaching the host's PC.** "On my PC" needs a network path from your friends to your PC; anything that connects
-the two PCs works:
-
-| Situation | What to do |
-|---|---|
-| Friends far away: [Radmin VPN](https://www.radmin-vpn.com/) (free, Windows) | Everyone joins the same Radmin network first; the invite then contains your Radmin address. Radmin links the PCs directly when it can and shows Relay/TCP when it cannot. |
-| Friends far away: [WireGuard](https://www.wireguard.com/) | Put your PC and your friends' PCs into one WireGuard network first; at least one of them needs an address the others can reach (a VPS or a forwarded port). The invite then contains your WireGuard address. |
-| Same home or LAN party | Allow the Windows Firewall prompt; friends use your local address from the invite. |
-| Both sides have IPv6 | Your router must let incoming UDP through to your PC. |
-| Router with a public IPv4 address | Forward UDP 27000-27002 (or your port and the next two) to your PC. |
-| None of these (most home connections) | Create the game on a Haulnet server instead: nobody needs to reach your PC. |
-
-Network: the server on your PC uses the port you enter and the next two (**UDP 27000-27002** by default);
-the address check between a friend and the host uses **UDP 47777** and is optional. Windows Firewall may ask
-whether `luxon_server` and R.E.P.O. may use the network: allow it.
-
-Lobby password, kick and ban work in Haulnet games too. Photon Cloud checks them on its servers; in a
-Haulnet game the host's mod does it, so a refused player may appear in the lobby for a moment before
-being removed.
-
-All players need the same game version, and everyone in a Haulnet game needs Haulnet.
+The full guide covers every row of the tab, how friends reach the host's PC and the config file:
+[haulnet.cc/docs/play](https://haulnet.cc/docs/play/). Every message Haulnet shows is explained at
+[haulnet.cc/docs/troubleshooting](https://haulnet.cc/docs/troubleshooting/).
 
 ## How it works
-
-"On my PC": the server runs inside the host's game, and friends connect straight to it.
 
 ```mermaid
 flowchart LR
@@ -105,89 +78,57 @@ flowchart LR
         S[[Server inside the host's game]]
         GA --> S
     end
-    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, WireGuard, IPv6, forwarded port" --> S
+    GB[Friend<br/>R.E.P.O. + Haulnet] -- "host IP<br/>LAN, Radmin VPN, WireGuard, IPv6" --> S
 ```
 
-- The mod redirects the game's Photon connection to a server you choose instead of Photon Cloud.
-- When you host "On my PC", it runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source
-  Photon-compatible server, inside your game session, and stops it when you leave.
-- Joining players can use any of the host's addresses; the mod keeps all connections, including voice
-  chat, on the address they used.
+- The mod redirects the game's Photon connection, inside the game process, to the server you chose instead of
+  Photon Cloud.
+- "On my PC" runs [LuxonServer](https://github.com/niansa/LuxonServer), an open-source Photon-compatible server
+  shipped with the mod, and stops it when you return to the main menu.
+- A Haulnet server is the same LuxonServer packaged as [haulnet-server](https://github.com/haulnet/haulnet-server);
+  the public list lives in [haulnet-servers](https://github.com/haulnet/haulnet-servers).
 
-## Settings and removal
-
-Settings are stored in `BepInEx/config/haulnet.repo.cfg`: the last hosting port, saved servers
-(`[Servers] Saved = Name=host[:port];...`), the recent list, the last tab and the server list URL (`RegistryUrl`;
-empty means the Haulnet list, a community can use its own list in the same format). The last downloaded server list
-is kept in `BepInEx/cache/Haulnet` for offline use.
-
-To remove the mod, delete `BepInEx/plugins/Haulnet`; to remove BepInEx as well, delete `BepInEx`, `winhttp.dll`,
-`doorstop_config.ini` and `.doorstop_version` from the game folder. Haulnet never changes game files or system
-settings.
+Haulnet never changes game files or system settings. Its settings are in `BepInEx/config/haulnet.repo.cfg`; to
+remove the mod, delete `BepInEx/plugins/Haulnet`.
 
 ## Building from source
 
-Requirements: a legal copy of R.E.P.O., [BepInEx 5](https://github.com/BepInEx/BepInEx/releases)
-installed in the game, the [.NET SDK](https://dotnet.microsoft.com/download) 8 or newer, and internet access
-for the first build.
+Requirements: a legal copy of R.E.P.O. with [BepInEx 5](https://github.com/BepInEx/BepInEx/releases) installed,
+and the [.NET SDK](https://dotnet.microsoft.com/download) 8 or newer.
 
 1. Copy `mod/Directory.Build.user.props.example` to `mod/Directory.Build.user.props` and set `GameDir` to the
    folder that contains `REPO.exe`.
-2. Build:
+2. Build and test:
 
    ```bash
    dotnet build mod/Haulnet.sln -c Release
+   dotnet test mod/Haulnet.Tests
    ```
 
-   The build downloads the pinned LuxonServer release, verifies its SHA-256 and puts it under `server/` next
-   to the plugin. With `DeployToGame` set to `true`, the result is copied to
-   `<GameDir>/BepInEx/plugins/Haulnet`.
+The build downloads the pinned LuxonServer release, verifies its SHA-256 and puts it under `server/` next to the
+plugin; with `DeployToGame` set to `true` the result is copied to `<GameDir>/BepInEx/plugins/Haulnet`. Game, Photon
+and BepInEx assemblies are referenced from your installation and are never part of this repository. The tests do
+not need the game.
 
-Game, Photon and BepInEx assemblies are referenced from your installation and never included in this
-repository.
+`dotnet build mod/Haulnet -c Release -t:Package` writes the release packages to `artifacts/<version>/`: the zip
+for manual install, the Thunderstore package and `SHA256SUMS`.
 
-Unit tests that do not need the game (translations, server status and monitor data parsing, server ranking,
-and the bundled server's config and output):
+## Translations
 
-```bash
-dotnet test mod/Haulnet.Tests
-```
+Haulnet follows the game's language. Its own texts exist in English, Russian and Ukrainian; other languages show
+English.
 
-### Release packages
+Texts live in `mod/Haulnet/Localization/<language>.tsv`, one `KEY<TAB>text` per line; `en.tsv` is the source and
+explains the placeholders and length limits. To add or fix a language, copy `en.tsv` to `<code>.tsv` (for example
+`de.tsv` or `pt-BR.tsv`, as the game names its languages), translate the texts after the tab, run the tests and
+open a pull request with a screenshot of the region page and of one popup in that language. Missing keys fall back
+to English, so a partial translation works.
 
-```bash
-dotnet build mod/Haulnet -c Release -t:Package -p:ThunderstoreTeam=<team>
-```
+## Feedback
 
-writes `artifacts/<version>/` and publishes nothing:
-
-| File | Contents |
-|---|---|
-| `Haulnet-<version>.zip`, `Haulnet.zip` | folder `Haulnet/` (plugin, `server/`, licenses, and `README.txt` from [`packaging/manual`](packaging/manual) with install steps for players): extract into `BepInEx/plugins` |
-| `<team>-Haulnet-<version>.zip` | Thunderstore package: `manifest.json`, `icon.png`, `README.md` from [`packaging/thunderstore`](packaging/thunderstore), files under `plugins/` so mod managers keep the `server/` folder |
-| `SHA256SUMS` | hashes of the zips |
-
-The version comes from `mod/Haulnet/Haulnet.csproj` and must match `Plugin.Version` in `Plugin.cs`; the target
-stops otherwise. Releases are built on a maintainer machine because the build needs the game's assemblies.
-
-## Languages and translations
-
-Haulnet follows the game's language (Settings → Language). Its own texts exist in English, Russian and
-Ukrainian; in any other language they are shown in English, and the parts that belong to the game (such as
-*Back*) are always in the game's language.
-
-Texts live in `mod/Haulnet/Localization/<language>.tsv`, one `KEY<TAB>text` per line, the same format as the
-game's own translation files; `en.tsv` is the source and explains the placeholders and length limits. To add or
-fix a language, copy `en.tsv` to `<code>.tsv` (for example `de.tsv` or `pt-BR.tsv`, as the game names its
-languages), translate the texts after the tab, run the checks above, and open a pull request with a screenshot of
-the region page and of one popup in that language. Missing keys fall back to English, so a partial translation
-works.
-
-## Planned
-
-- Connection help for players who host "On my PC" without Radmin VPN or a shared network (under consideration,
-  not decided).
-- Thunderstore release.
+- Bugs and ideas: [issues](https://github.com/haulnet/haulnet-repo/issues). Attach `BepInEx/LogOutput.log` and
+  say what you did.
+- Security reports: [security@haulnet.cc](mailto:security@haulnet.cc).
 
 ## Not supported
 

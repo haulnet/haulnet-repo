@@ -9,8 +9,7 @@ game plays exactly as without the mod.
 Useful when no Photon Cloud region is close to you (a Haulnet server can
 stand in any city), when you want a server of your own, and for direct play
 from your PC, like "Open to LAN": friends connect straight to the host's PC
-over the home network, or over the internet through Radmin VPN, WireGuard or
-a forwarded port.
+over the home network, or over the internet through Radmin VPN or WireGuard.
 
 Full guide: https://haulnet.cc/docs/install/
 
@@ -23,8 +22,7 @@ REQUIREMENTS
   https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/
 - Everyone in a Haulnet game needs Haulnet and the same game version.
 
-This zip is for installing by hand. Haulnet is planned for Thunderstore, so
-that mod managers (r2modman, Gale, the Thunderstore app) can install it.
+This zip is for installing by hand.
 
 
 INSTALL
@@ -52,8 +50,7 @@ tab lists, in this order:
 - On my PC: host a private game on your PC. Enter a UDP port (27000 by
   default); the server uses it and the next two. Friends need a network path
   to your PC: Radmin VPN (https://www.radmin-vpn.com/), WireGuard
-  (https://www.wireguard.com/), the same home network, IPv6 or a forwarded
-  port.
+  (https://www.wireguard.com/), the same home network or IPv6.
 - + Server by address...: type host or host:port of a server you or a
   friend runs.
 - This PC: shown when a haulnet-server runs on your PC.
@@ -76,8 +73,8 @@ come from (your home network, the Radmin VPN or WireGuard adapter). Without
 it, friends get no answer from your PC.
 
 - Hosting uses the port you enter and the next two: UDP 27000-27002 by
-  default. Forward these on your router only if friends join over the
-  internet without Radmin VPN or WireGuard.
+  default. Forwarding them on your router is not enough: the invite contains
+  only the addresses of your PC itself, not the router's public address.
 - UDP 47777: optional address check between a friend and the host.
 
 
