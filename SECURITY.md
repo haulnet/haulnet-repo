@@ -5,8 +5,10 @@ security reports matter.
 
 ## Reporting a vulnerability
 
-Do not open a public issue. Write to [security@haulnet.cc](mailto:security@haulnet.cc) with what you found and how
-to reproduce it. Expect an acknowledgement within a week.
+Do not open a public issue. Use GitHub's
+[private vulnerability reporting](https://github.com/haulnet/haulnet-repo/security/advisories/new), or write to
+[security@haulnet.cc](mailto:security@haulnet.cc), with what you found and how to reproduce it. Expect an
+acknowledgement within a week.
 
 ## Scope
 
