@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Troubleshooting
+    url: https://haulnet.cc/docs/troubleshooting/
+    about: Every message Haulnet shows, explained
+  - name: A problem with a listed server
+    url: https://github.com/haulnet/haulnet-servers/issues/new/choose
+    about: A server from the city rows is down, slow or misbehaves
+  - name: Security report
+    url: https://github.com/haulnet/haulnet-repo/security/policy
+    about: Report a vulnerability privately, not as a public issue
