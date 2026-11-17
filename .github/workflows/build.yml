@@ -1,0 +1,114 @@
+name: Build
+
+# Tests and release packages, shared by CI (every pull request and push to main) and by the release workflow, so a
+# release runs exactly the steps every pull request has already passed.
+#
+# The mod compiles against the game's assemblies, which a runner does not have. The build uses reference
+# assemblies instead: metadata-only copies (no code, made by tools/gamerefs) kept in a private repository and read
+# with a deploy key. A pull request from a fork has no access to that key: it runs the tests and skips the packages.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build; empty means the commit that started the run
+        type: string
+        default: ""
+    secrets:
+      GAMEREFS_DEPLOY_KEY:
+        required: false
+    outputs:
+      version:
+        description: Version in Haulnet.csproj
+        value: ${{ jobs.build.outputs.version }}
+      packaged:
+        description: The string true when the packages were built
+        value: ${{ jobs.build.outputs.packaged }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Windows, like the maintainers' machines: the packages come out the same as a local build.
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      GAMEREFS_DEPLOY_KEY: ${{ secrets.GAMEREFS_DEPLOY_KEY }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      packaged: ${{ steps.package.outputs.packaged }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' mod/Haulnet/Haulnet.csproj)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Haulnet $version" >> "$GITHUB_STEP_SUMMARY"
+      - name: Tests
+        run: dotnet test mod/Haulnet.Tests -c Release
+      - name: Tests of the release tools
+        run: python -m unittest discover -s tools -v
+
+      - name: Reference assemblies, pinned tag
+        id: pin
+        if: env.GAMEREFS_DEPLOY_KEY != ''
+        shell: bash
+        run: |
+          tag="$(sed -n 's/^GAMEREFS_TAG=//p' tools/gamerefs/gamerefs.lock)"
+          test -n "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Reference assemblies
+        if: env.GAMEREFS_DEPLOY_KEY != ''
+        uses: actions/checkout@v4
+        with:
+          repository: haulnet/gamerefs
+          ref: ${{ steps.pin.outputs.tag }}
+          ssh-key: ${{ secrets.GAMEREFS_DEPLOY_KEY }}
+          path: gamerefs
+          persist-credentials: false
+      - name: Packages
+        id: package
+        if: env.GAMEREFS_DEPLOY_KEY != ''
+        shell: pwsh
+        run: |
+          dotnet build mod/Haulnet -c Release -t:Package "-p:GameDir=$env:GITHUB_WORKSPACE\gamerefs"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "packaged=true" >> $env:GITHUB_OUTPUT
+      - name: Checksums and release notes
+        if: steps.package.outputs.packaged == 'true'
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GAMEREFS_TAG: ${{ steps.pin.outputs.tag }}
+        run: |
+          (cd "artifacts/$VERSION" && sha256sum -c SHA256SUMS)
+          python tools/release_notes.py --gamerefs gamerefs > "artifacts/$VERSION/RELEASE_NOTES.md"
+          game="$(sed -n 's/^game_version=//p' gamerefs/GAMEREFS.txt)"
+          {
+            echo "Built against R.E.P.O. $game (reference assemblies $GAMEREFS_TAG)."
+            echo
+            echo '```'
+            cat "artifacts/$VERSION/SHA256SUMS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the packages
+        if: steps.package.outputs.packaged == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/${{ steps.version.outputs.version }}/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Packages skipped
+        if: env.GAMEREFS_DEPLOY_KEY == ''
+        shell: bash
+        run: echo "::notice::Packages were not built. This run has no access to the reference assemblies (a pull request from a fork). The tests ran."

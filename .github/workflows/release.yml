@@ -1,0 +1,96 @@
+name: Release
+
+# A release is a tag vX.Y.Z on main whose version equals <Version> in Haulnet.csproj and has its section in
+# CHANGELOG.md. Pushing the tag builds the packages and publishes the GitHub release:
+#
+#   Haulnet.zip, Haulnet-X.Y.Z.zip     manual install (haulnet.cc links releases/latest/download/Haulnet.zip)
+#   Haulnet-X.Y.Z-thunderstore.zip     the Thunderstore package
+#   SHA256SUMS
+#
+# "Run workflow" with a tag does the same for a tag that exists; with "draft" the release stays a draft, which is
+# how to rehearse without publishing anything.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, e.g. v0.4.2
+        required: true
+        type: string
+      draft:
+        description: Create the release as a draft
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ inputs.tag || github.ref_name }}
+    secrets:
+      GAMEREFS_DEPLOY_KEY: ${{ secrets.GAMEREFS_DEPLOY_KEY }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      VERSION: ${{ needs.build.outputs.version }}
+      PACKAGED: ${{ needs.build.outputs.packaged }}
+      DRAFT: ${{ inputs.draft }}
+      GH_TOKEN: ${{ github.token }}
+      # Optional: a token that may start the Pages workflow of haulnet/haulnet.github.io.
+      SITE_DISPATCH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+      - name: The tag is this version, on main, and not released yet
+        run: |
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Tag $TAG does not match <Version> $VERSION in mod/Haulnet/Haulnet.csproj"; exit 1
+          fi
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "::error::$TAG is not on main"; exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $TAG exists already"; exit 1
+          fi
+          if [ "$PACKAGED" != "true" ]; then
+            echo "::error::The packages were not built: the GAMEREFS_DEPLOY_KEY secret is missing"; exit 1
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages
+      - name: GitHub release
+        working-directory: packages
+        run: |
+          sha256sum -c SHA256SUMS
+          draft=""
+          if [ "$DRAFT" = "true" ]; then draft="--draft"; fi
+          # The text after # is the name the release page shows for the file.
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag $draft \
+            --title "Haulnet $VERSION" --notes-file RELEASE_NOTES.md \
+            "Haulnet.zip#Haulnet.zip - manual install" \
+            "Haulnet-$VERSION.zip#Haulnet-$VERSION.zip - manual install (same file)" \
+            "Haulnet-$VERSION-thunderstore.zip#Haulnet-$VERSION-thunderstore.zip - Thunderstore package (mod managers)" \
+            "SHA256SUMS#SHA256SUMS"
+      - name: Ask haulnet.cc to rebuild
+        # The site shows the latest version from this release; its own schedule would pick it up hours later.
+        if: env.DRAFT != 'true' && env.SITE_DISPATCH_TOKEN != ''
+        run: |
+          GH_TOKEN="$SITE_DISPATCH_TOKEN" gh api repos/haulnet/haulnet.github.io/dispatches \
+            -f event_type=mod-release -f "client_payload[tag]=$TAG"
