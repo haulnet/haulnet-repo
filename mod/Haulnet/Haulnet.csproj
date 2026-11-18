@@ -12,6 +12,12 @@
     <DebugType>embedded</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      The embedded debug data names source files from the repository root (/_/mod/Haulnet/...), not from the
+      folder of the machine that built the DLL: no local paths in a release, and the same commit gives the same
+      file on any machine.
+    -->
+    <DeterministicSourcePaths>true</DeterministicSourcePaths>
   </PropertyGroup>
 
   <!--
