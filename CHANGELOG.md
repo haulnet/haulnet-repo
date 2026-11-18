@@ -6,6 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-18
+
+Bundled LuxonServer: v1.5 (unchanged).
+
 ### Changed
 
 - A Haulnet server no longer receives the player's Steam sign-in ticket. The game makes the ticket for its own
@@ -76,7 +80,8 @@ First public release (GitHub). Release notes as published: https://github.com/ha
   uptime the public server monitor measured over the last day and week; a server with outages moves down and is
   picked less often inside its city. Without monitor data the order follows ping alone.
 
-[Unreleased]: https://github.com/haulnet/haulnet-repo/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/haulnet/haulnet-repo/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/haulnet/haulnet-repo/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/haulnet/haulnet-repo/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/haulnet/haulnet-repo/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/haulnet/haulnet-repo/releases/tag/v0.4.0

@@ -11,7 +11,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "haulnet.repo";
     public const string Name = "Haulnet";
-    public const string Version = "0.4.2";
+    public const string Version = "0.4.3";
 
     internal static ManualLogSource Log { get; private set; } = null!;
     internal static HaulnetConfig Settings { get; private set; } = null!;
