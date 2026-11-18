@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- A Haulnet server no longer receives the player's Steam sign-in ticket. The game makes the ticket for its own
+  online service; a Haulnet server cannot check it and uses only the Steam ID, so Haulnet now withholds it when
+  the game connects to a Haulnet place. Photon Cloud connections are unchanged.
+
 ## [0.4.2] - 2026-11-18
 
 No changes to how the mod works. Bundled LuxonServer: v1.5 (unchanged).
