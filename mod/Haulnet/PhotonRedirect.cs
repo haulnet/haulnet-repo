@@ -22,6 +22,8 @@ namespace Haulnet;
 /// <c>AddressRewriter</c> on every client that connects, including the Photon Voice client: the
 /// server hands out Master and Game server addresses configured on the host (often 127.0.0.1), and the
 /// rewriter replaces their host part with the address this player used, keeping the port.
+/// The same prefix withholds the player's Steam ticket from a self-hosted server (see
+/// <see cref="WithholdTicket"/>).
 /// </item>
 /// </list>
 /// Where to connect is decided by <see cref="Session"/>; for Photon Cloud both hooks leave the game's values
@@ -36,6 +38,10 @@ internal static class PhotonRedirect
     // dictionary does not leak in practice.
     private static readonly Dictionary<LoadBalancingClient, string> OriginalNameServerHosts = new();
     private static readonly Dictionary<LoadBalancingClient, PhotonPortDefinition> OriginalPorts = new();
+
+    // Per client: the authentication values the game set, and the ticket-free copy the client carries instead.
+    private static readonly Dictionary<LoadBalancingClient, WithheldAuth> Withheld = new();
+    private static bool _loggedWithheld;
 
     // Ports for a server that does not use the game's 27000-27002, or null for the game's own port set.
     private static PhotonPortDefinition? _portOverride;
@@ -160,10 +166,12 @@ internal static class PhotonRedirect
                 RestorePorts(__instance);
             }
 
+            WithholdTicket(__instance);
             return;
         }
 
         RestorePorts(__instance);
+        RestoreAuthValues(__instance);
 
         if (__instance.AddressRewriter == Rewriter)
         {
@@ -185,6 +193,78 @@ internal static class PhotonRedirect
             client.ServerPortOverrides = ports;
             OriginalPorts.Remove(client);
         }
+    }
+
+    /// <summary>
+    /// Keeps the player's Steam ticket away from a self-hosted server.
+    /// </summary>
+    /// <remarks>
+    /// Before every connect the game's <c>PlatformManager.SetPhotonAuthTicket()</c> gives Photon new
+    /// authentication values: the Steam user id, the Steam authentication type and a Steam ticket as an
+    /// authentication parameter. Photon Cloud needs the ticket to check the player with Steam. A self-hosted
+    /// server cannot check it and takes only the user id, so the ticket would reach the server's operator for
+    /// nothing. The client therefore connects with a copy that has the user id and type and no parameters. The
+    /// game's own object is not changed and comes back for a Photon Cloud connection
+    /// (<see cref="RestoreAuthValues"/>). On any error the game's values stay as they are.
+    /// </remarks>
+    private static void WithholdTicket(LoadBalancingClient client)
+    {
+        try
+        {
+            var values = client.AuthValues;
+            if (values == null || string.IsNullOrEmpty(values.AuthGetParameters))
+            {
+                // Nothing to withhold: no ticket, or already our copy (the connect methods call each other).
+                return;
+            }
+
+            var copy = new AuthenticationValues { UserId = values.UserId, AuthType = values.AuthType };
+            Withheld[client] = new WithheldAuth(values, copy);
+            client.AuthValues = copy;
+            var kind = ReferenceEquals(client, PhotonNetwork.NetworkingClient) ? "game" : "voice";
+            Plugin.Log.LogDebug($"Steam ticket withheld from the {kind} connection.");
+            if (!_loggedWithheld)
+            {
+                _loggedWithheld = true;
+                Plugin.Log.LogInfo("Steam ticket withheld: this server gets the Steam ID only.");
+            }
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogError($"Could not withhold the Steam ticket; connecting with the game's values: {e}");
+        }
+    }
+
+    /// <summary>
+    /// For a Photon Cloud connection: if the client still carries our ticket-free copy, put the game's own
+    /// values back. Normally the game has already set new ones and there is nothing to do.
+    /// </summary>
+    private static void RestoreAuthValues(LoadBalancingClient client)
+    {
+        if (!Withheld.TryGetValue(client, out var withheld))
+        {
+            return;
+        }
+
+        Withheld.Remove(client);
+        if (ReferenceEquals(client.AuthValues, withheld.Copy))
+        {
+            client.AuthValues = withheld.Original;
+            Plugin.Log.LogInfo("Photon Cloud: restoring the game's authentication values.");
+        }
+    }
+
+    private readonly struct WithheldAuth
+    {
+        public WithheldAuth(AuthenticationValues original, AuthenticationValues copy)
+        {
+            Original = original;
+            Copy = copy;
+        }
+
+        public AuthenticationValues Original { get; }
+
+        public AuthenticationValues Copy { get; }
     }
 
     private static string RewriteAddress(string address, ServerConnection connection)
