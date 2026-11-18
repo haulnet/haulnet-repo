@@ -16,6 +16,12 @@ Bundled LuxonServer: v1.5 (unchanged).
   online service; a Haulnet server cannot check it and uses only the Steam ID, so Haulnet now withholds it when
   the game connects to a Haulnet place. Photon Cloud connections are unchanged.
 
+### Fixed
+
+- After a game on "On my PC", the first connection to Photon Cloud no longer times out: the PHOTON CLOUD tab of the
+  region page used to stay empty for 10 to 25 seconds, and the voice connection of the next Photon Cloud game had
+  the same timeout. Haulnet wrote its own port back over the game's ports for those connections.
+
 ## [0.4.2] - 2026-11-18
 
 No changes to how the mod works. Bundled LuxonServer: v1.5 (unchanged).
