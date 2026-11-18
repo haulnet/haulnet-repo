@@ -13,7 +13,7 @@ body:
     attributes:
       label: Versions
       description: The game version from the main menu and the Haulnet version from the line "Haulnet <version> loaded." in BepInEx/LogOutput.log
-      placeholder: "Game v0.5.1, Haulnet 0.4.1"
+      placeholder: "Game v0.5.2, Haulnet 0.4.3"
     validations:
       required: true
   - type: dropdown
