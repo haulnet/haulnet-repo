@@ -37,7 +37,6 @@ internal static class PhotonRedirect
     // Photon clients live for the whole game session (PUN's client and the voice client), so a plain
     // dictionary does not leak in practice.
     private static readonly Dictionary<LoadBalancingClient, string> OriginalNameServerHosts = new();
-    private static readonly Dictionary<LoadBalancingClient, PhotonPortDefinition> OriginalPorts = new();
 
     // Per client: the authentication values the game set, and the ticket-free copy the client carries instead.
     private static readonly Dictionary<LoadBalancingClient, WithheldAuth> Withheld = new();
@@ -141,6 +140,10 @@ internal static class PhotonRedirect
     /// <c>AppSettings.Server</c> is filled, but does not restore the cloud default when it is empty again. So
     /// the original value is remembered per client before the first redirect and put back for cloud
     /// connections; otherwise a Photon Cloud game after a Haulnet game would still go to the old server.
+    /// Ports need no such undo: the game writes its own port set in <c>PhotonSetAppId</c> before every connect and
+    /// the voice client copies the game client's ports, so both arrive here with the right ports for Photon Cloud.
+    /// Writing saved ports back at this point is what sent the first Photon Cloud connection after a custom-port
+    /// game to the old port (seen in the game, 2026-11-18).
     /// </remarks>
     private static void BeforeClientConnect(LoadBalancingClient __instance)
     {
@@ -154,23 +157,13 @@ internal static class PhotonRedirect
             __instance.AddressRewriter = Rewriter;
             if (_portOverride.HasValue)
             {
-                if (!OriginalPorts.ContainsKey(__instance))
-                {
-                    OriginalPorts[__instance] = __instance.ServerPortOverrides;
-                }
-
                 __instance.ServerPortOverrides = _portOverride.Value;
-            }
-            else
-            {
-                RestorePorts(__instance);
             }
 
             WithholdTicket(__instance);
             return;
         }
 
-        RestorePorts(__instance);
         RestoreAuthValues(__instance);
 
         if (__instance.AddressRewriter == Rewriter)
@@ -182,16 +175,6 @@ internal static class PhotonRedirect
         {
             Plugin.Log.LogInfo($"Photon Cloud: restoring NameServer host {original} (was {__instance.NameServerHost}).");
             __instance.NameServerHost = original;
-        }
-    }
-
-    /// <summary>Undo a port override. The game sets PUN's own client again in PhotonSetAppId; this covers the voice client.</summary>
-    private static void RestorePorts(LoadBalancingClient client)
-    {
-        if (OriginalPorts.TryGetValue(client, out var ports))
-        {
-            client.ServerPortOverrides = ports;
-            OriginalPorts.Remove(client);
         }
     }
 
