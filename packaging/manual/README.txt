@@ -12,6 +12,7 @@ from your PC, like "Open to LAN": friends connect straight to the host's PC
 over the home network, or over the internet through Radmin VPN or WireGuard.
 
 Full guide: https://haulnet.cc/docs/install/
+For mod managers: https://thunderstore.io/c/repo/p/Haulnet/Haulnet/
 
 
 REQUIREMENTS

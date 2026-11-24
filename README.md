@@ -11,12 +11,13 @@
 
 <p align="center">
   <a href="https://github.com/haulnet/haulnet-repo/releases/latest"><img src="https://img.shields.io/github/v/release/haulnet/haulnet-repo?label=release&color=E5484D" alt="Latest release"></a>
-  <a href="https://github.com/haulnet/haulnet-repo/releases"><img src="https://img.shields.io/github/downloads/haulnet/haulnet-repo/total?label=downloads&color=5B6573" alt="Downloads"></a>
+  <a href="https://github.com/haulnet/haulnet-repo/releases"><img src="https://img.shields.io/github/downloads/haulnet/haulnet-repo/total?label=GitHub%20downloads&color=5B6573" alt="GitHub downloads"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/haulnet/haulnet-repo?color=5B6573" alt="MIT license"></a>
 </p>
 
 <p align="center">
   <a href="https://haulnet.cc/">Website</a> ·
+  <a href="https://thunderstore.io/c/repo/p/Haulnet/Haulnet/">Thunderstore</a> ·
   <a href="https://haulnet.cc/docs/install/">Install</a> ·
   <a href="https://haulnet.cc/docs/play/">Play</a> ·
   <a href="https://haulnet.cc/docs/server/">Run a server</a> ·
@@ -46,6 +47,17 @@ Haulnet connects to wherever the game lives. Lobby password, kick and ban work i
 
 Every player needs R.E.P.O. from Steam on Windows and
 [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
+
+### With a mod manager
+
+1. Open your R.E.P.O. profile in a mod manager such as r2modman or Gale.
+2. Install [Haulnet by Haulnet](https://thunderstore.io/c/repo/p/Haulnet/Haulnet/). The manager also installs BepInExPack.
+3. Start R.E.P.O. in modded mode from the manager and look for the **HAULNET** tab on the region page.
+
+For the latest release, use [GitHub Releases](https://github.com/haulnet/haulnet-repo/releases/latest). Managers
+can install it from the `Haulnet-<version>-thunderstore.zip` asset with *Import local mod*.
+
+### By hand from GitHub
 
 1. Install BepInExPack into the game folder and start the game once, so BepInEx creates its folders.
 2. Download [Haulnet.zip](https://github.com/haulnet/haulnet-repo/releases/latest/download/Haulnet.zip) and extract
@@ -88,8 +100,8 @@ flowchart LR
 - A Haulnet server is the same LuxonServer packaged as [haulnet-server](https://github.com/haulnet/haulnet-server);
   the public list lives in [haulnet-servers](https://github.com/haulnet/haulnet-servers).
 
-Haulnet never changes game files or system settings. Its settings are in `BepInEx/config/haulnet.repo.cfg`; to
-remove the mod, delete `BepInEx/plugins/Haulnet`.
+Haulnet never changes game files or system settings. Its settings are in `BepInEx/config/haulnet.repo.cfg`. Uninstall
+it through your mod manager or delete `BepInEx/plugins/Haulnet` for a manual install.
 
 ## Building from source
 
