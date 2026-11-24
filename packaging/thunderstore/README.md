@@ -24,9 +24,10 @@ their Haulnet where the game lives.
 
 ## Install
 
-Install Haulnet in your R.E.P.O. profile with a mod manager such as r2modman or Gale. The manager installs its
-BepInExPack dependency. Start the game in modded mode from the manager. For the latest release, see
-[GitHub Releases](https://github.com/haulnet/haulnet-repo/releases/latest).
+In r2modman, open a R.E.P.O. profile and find Haulnet by Haulnet under **Online**. Click **Download**, then
+**Download with dependencies**, then **Start modded**. For the manual ZIP, see
+[GitHub Releases](https://github.com/haulnet/haulnet-repo/releases/latest). Both methods are covered in the
+[installation guide](https://haulnet.cc/docs/install/).
 
 ## Good to know
 

@@ -85,9 +85,7 @@ def render(version, changes, luxon_version, disclaimer_text, built_for=None):
 
 - **By hand** — extract `Haulnet.zip` into `REPO/BepInEx/plugins`, replacing the old `Haulnet` folder. You need
   [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5).
-- **With a mod manager** — use *Import local mod* with the `Haulnet-{version}-thunderstore.zip` asset below for
-  this release. The [official Thunderstore listing](https://thunderstore.io/c/repo/p/Haulnet/Haulnet/) shows the
-  version available in the store.
+- **With a mod manager** — install [Haulnet by Haulnet from Thunderstore](https://thunderstore.io/c/repo/p/Haulnet/Haulnet/).
 
 Every player in a Haulnet game needs Haulnet and the same game version. See the
 [installation guide](https://haulnet.cc/docs/install/).
@@ -97,7 +95,7 @@ Every player in a Haulnet game needs Haulnet and the same game version. See the
 | File | For |
 |---|---|
 | `Haulnet.zip` (the same file as `Haulnet-{version}.zip`) | manual install into `BepInEx/plugins` |
-| `Haulnet-{version}-thunderstore.zip` | the Thunderstore package, for mod managers (r2modman, Gale: *Import local mod*); not for manual install |
+| `Haulnet-{version}-thunderstore.zip` | the Thunderstore package. In r2modman, use **Settings → Profile → Import local mod** |
 | `SHA256SUMS` | checksums of the three zips |
 
 {built}Bundled server: [LuxonServer](https://github.com/niansa/LuxonServer) {luxon_version} (BSD-3-Clause), unmodified.
