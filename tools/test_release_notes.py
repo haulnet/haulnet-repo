@@ -63,6 +63,7 @@ class Parts(unittest.TestCase):
         self.assertTrue(notes.startswith("- Change.\n\n## Install or update\n"))
         self.assertIn("`Haulnet-1.2.0.zip`", notes)
         self.assertIn("`Haulnet-1.2.0-thunderstore.zip`", notes)
+        self.assertIn("https://thunderstore.io/c/repo/p/Haulnet/Haulnet/", notes)
         self.assertIn("Built for R.E.P.O. v0.5.1. Bundled server: [LuxonServer]", notes)
         self.assertIn("LuxonServer) v1.5 (BSD-3-Clause), unmodified.", notes)
         self.assertTrue(notes.endswith("Disclaimer text.\n"))

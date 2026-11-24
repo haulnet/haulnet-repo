@@ -22,6 +22,13 @@ R.E.P.O. always plays through Photon's servers, even when both players sit on th
 Friends join the usual way: accept the Steam invite or use *Join game* in the Steam friends list. The invite tells
 their Haulnet where the game lives.
 
+## Install
+
+In r2modman, open a R.E.P.O. profile and find Haulnet by Haulnet under **Online**. Click **Download**, then
+**Download with dependencies**, then **Start modded**. For the manual ZIP, see
+[GitHub Releases](https://github.com/haulnet/haulnet-repo/releases/latest). Both methods are covered in the
+[installation guide](https://haulnet.cc/docs/install/).
+
 ## Good to know
 
 - You need R.E.P.O. from Steam on Windows. Everyone in a Haulnet game needs Haulnet and the same game version.

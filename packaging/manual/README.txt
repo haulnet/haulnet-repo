@@ -12,6 +12,7 @@ from your PC, like "Open to LAN": friends connect straight to the host's PC
 over the home network, or over the internet through Radmin VPN or WireGuard.
 
 Full guide: https://haulnet.cc/docs/install/
+For mod managers: https://thunderstore.io/c/repo/p/Haulnet/Haulnet/
 
 
 REQUIREMENTS
@@ -43,12 +44,13 @@ INSTALL
 FIRST RUN
 ---------
 
-Open Private game or Public game: the region page now has two tabs,
-HAULNET and PHOTON CLOUD (the game's own regions, unchanged). The HAULNET
-tab lists, in this order:
+Choose Private game and confirm Create game, or choose Public game and
+read the game's warning. Regions has two tabs, HAULNET and PHOTON CLOUD (the game's own
+regions, unchanged). The HAULNET tab lists, in this order:
 
-- On my PC: host a private game on your PC. Enter a UDP port (27000 by
-  default); the server uses it and the next two. Friends need a network path
+- On my PC: host a private game on your PC. Keep or change the UDP port
+  (27000 by default), select Create, then choose New game or a save. The
+  server uses that port and the next two. Friends need a network path
   to your PC: Radmin VPN (https://www.radmin-vpn.com/), WireGuard
   (https://www.wireguard.com/), the same home network or IPv6.
 - + Server by address...: type host or host:port of a server you or a
@@ -95,7 +97,8 @@ PROBLEMS
 - Every message Haulnet shows, explained:
   https://haulnet.cc/docs/troubleshooting/
 - Report a bug: https://github.com/haulnet/haulnet-repo/issues
-  Attach BepInEx\LogOutput.log and say what you did.
+  Say what you did and attach the relevant lines from BepInEx\LogOutput.log
+  with IP addresses and Steam IDs removed.
 - Security reports: security@haulnet.cc
 
 

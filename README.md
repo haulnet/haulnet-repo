@@ -11,7 +11,8 @@
 
 <p align="center">
   <a href="https://github.com/haulnet/haulnet-repo/releases/latest"><img src="https://img.shields.io/github/v/release/haulnet/haulnet-repo?label=release&color=E5484D" alt="Latest release"></a>
-  <a href="https://github.com/haulnet/haulnet-repo/releases"><img src="https://img.shields.io/github/downloads/haulnet/haulnet-repo/total?label=downloads&color=5B6573" alt="Downloads"></a>
+  <a href="https://github.com/haulnet/haulnet-repo/releases"><img src="https://img.shields.io/github/downloads/haulnet/haulnet-repo/total?label=GitHub%20downloads&color=5B6573" alt="GitHub downloads"></a>
+  <a href="https://thunderstore.io/c/repo/p/Haulnet/Haulnet/"><img src="https://img.shields.io/badge/install-Thunderstore-E5484D" alt="Install Haulnet from Thunderstore"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/haulnet/haulnet-repo?color=5B6573" alt="MIT license"></a>
 </p>
 
@@ -47,6 +48,17 @@ Haulnet connects to wherever the game lives. Lobby password, kick and ban work i
 Every player needs R.E.P.O. from Steam on Windows and
 [BepInExPack](https://thunderstore.io/c/repo/p/BepInEx/BepInExPack/) (BepInEx 5), Haulnet's only dependency.
 
+### With a mod manager
+
+1. Select R.E.P.O. and open a profile in [r2modman](https://github.com/ebkr/r2modmanPlus/releases/latest).
+2. In **Online**, find [Haulnet by Haulnet](https://thunderstore.io/c/repo/p/Haulnet/Haulnet/). Click **Download**,
+   then **Download with dependencies** to install Haulnet and BepInExPack.
+3. Click **Start modded**. Follow [Play](#play) to open the **HAULNET** tab.
+
+Other Thunderstore-compatible managers can install the same package.
+
+### By hand from GitHub
+
 1. Install BepInExPack into the game folder and start the game once, so BepInEx creates its folders.
 2. Download [Haulnet.zip](https://github.com/haulnet/haulnet-repo/releases/latest/download/Haulnet.zip) and extract
    it into `REPO/BepInEx/plugins`. You get `BepInEx/plugins/Haulnet/` with `Haulnet.dll` and the `server/` folder
@@ -57,7 +69,8 @@ Step by step, with Windows Firewall, updating and removing: [haulnet.cc/docs/ins
 
 ## Play
 
-1. Open *Private game* or *Public game*. The region page now has the two tabs.
+1. Choose *Private game* and confirm *Create game*, or choose *Public game* and read the game's warning.
+   **Regions** has both tabs.
 2. On the **HAULNET** tab, pick where the game lives, exactly like picking a region.
 3. Invite friends through Steam as always.
 
@@ -88,8 +101,8 @@ flowchart LR
 - A Haulnet server is the same LuxonServer packaged as [haulnet-server](https://github.com/haulnet/haulnet-server);
   the public list lives in [haulnet-servers](https://github.com/haulnet/haulnet-servers).
 
-Haulnet never changes game files or system settings. Its settings are in `BepInEx/config/haulnet.repo.cfg`; to
-remove the mod, delete `BepInEx/plugins/Haulnet`.
+Haulnet never changes game files or system settings. Its settings are in `BepInEx/config/haulnet.repo.cfg`. Uninstall
+it through your mod manager or delete `BepInEx/plugins/Haulnet` for a manual install.
 
 ## Building from source
 
@@ -142,8 +155,8 @@ to English, so a partial translation works.
 
 ## Feedback
 
-- Bugs and ideas: [issues](https://github.com/haulnet/haulnet-repo/issues). Attach `BepInEx/LogOutput.log` and
-  say what you did.
+- Bugs and ideas: [issues](https://github.com/haulnet/haulnet-repo/issues). Say what you did and attach the relevant
+  lines from `BepInEx/LogOutput.log` with IP addresses and Steam IDs removed.
 - Security reports: privately, see [SECURITY.md](SECURITY.md).
 
 ## Not supported
